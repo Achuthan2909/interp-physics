@@ -1,0 +1,14 @@
+model: equivariant_transformer
+model_kwargs:
+  d_hidden: 64
+  n_heads: 4
+  n_layers: 4
+
+train:
+  n_epochs: 100
+  batch_size: 64
+  lr: 0.001
+  seed: 0
+  log_every: 20
+
+out: artifacts/runs/equivariant_transformer
