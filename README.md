@@ -4,6 +4,8 @@ Mechanistic interpretability across a spectrum of physics-informed neural archit
 
 See `docs/proposal/proposal.tex` for the thesis claim.
 
+**Architecture overview (task + diagrams + bench scores):** [`docs/architecture-suite.md`](docs/architecture-suite.md)
+
 ## Setup
 
 ```bash
