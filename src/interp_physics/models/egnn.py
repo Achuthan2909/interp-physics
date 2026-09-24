@@ -8,6 +8,7 @@ import flax.linen as nn
 import jax.numpy as jnp
 
 from interp_physics.models.base import ModelOutput
+from interp_physics.models.message_gnn import MessageGNNConfig, MessagePassingGNN
 
 
 @dataclass(frozen=True)
@@ -19,7 +20,7 @@ class EGNNConfig:
 
 
 class EGNN(nn.Module):
-    """E(3) Equivariant GNN with velocity for dynamics prediction."""
+    """Full EGNN: distances in messages, tanh-bounded equivariant updates."""
 
     config: EGNNConfig = EGNNConfig()
 
@@ -34,38 +35,13 @@ class EGNN(nn.Module):
         return_activations: bool | None = None,
     ) -> ModelOutput:
         cfg = self.config
-        want_act = cfg.return_activations if return_activations is None else return_activations
-
-        h = nn.Dense(cfg.d_hidden)(node_feat)
-        x = pos
-        v = vel
-        acts: list[jnp.ndarray] = []
-
-        for _ in range(cfg.n_layers):
-            rel = x[:, :, None, :] - x[:, None, :, :]
-            dist_sq = jnp.sum(rel**2, axis=-1, keepdims=True)
-
-            m_ij = nn.relu(
-                nn.Dense(cfg.d_msg)(h)[:, :, None, :]
-                + nn.Dense(cfg.d_msg)(h)[:, None, :, :]
-                + nn.Dense(cfg.d_msg)(dist_sq)
+        want = cfg.return_activations if return_activations is None else return_activations
+        inner = MessagePassingGNN(
+            config=MessageGNNConfig(
+                d_hidden=cfg.d_hidden,
+                d_msg=cfg.d_msg,
+                n_layers=cfg.n_layers,
+                return_activations=want,
             )
-            m_ij = m_ij * edges[:, :, :, None]
-
-            x_weight = jnp.tanh(nn.Dense(1)(m_ij))
-            coord_shift = (rel * x_weight * edges[:, :, :, None]).sum(axis=2)
-            v = v + coord_shift
-
-            agg = m_ij.sum(axis=2)
-            h = h + nn.relu(nn.Dense(cfg.d_hidden)(jnp.concatenate([h, agg], axis=-1)))
-            if want_act:
-                acts.append(h)
-
-        x = x + v
-        return ModelOutput(pred_pos=x, activations=acts if want_act else None)
-
-
-class EGNNFlax(EGNN):
-    """Alias kept for clarity in configs."""
-
-    pass
+        )
+        return inner(node_feat, pos, vel, edges, return_activations=want)
