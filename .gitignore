@@ -1,0 +1,37 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Experiment outputs
+artifacts/
+*.npz
+*.pt
+*.pkl
+
+# Jupyter
+.ipynb_checkpoints/
+
+# LaTeX build junk (keep sources under docs/)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
