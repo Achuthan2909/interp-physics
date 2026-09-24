@@ -1,0 +1,280 @@
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\usepackage{times}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{parskip}
+\usepackage[super,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage{array}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\title{
+    \vspace{-1cm}
+    {\large Boston University, Department of Computing \& Data Sciences}\\[0.5em]
+    {\large M.S. Thesis Proposal}\\[1em]
+    \textbf{What Does a Physics Network Actually Learn?\\
+    Mechanistic Interpretability Across a Spectrum\\
+    of Physics-Informed Neural Architectures}\\[1em]
+}
+\author{
+    Achuthan Rathinam\\
+    \small CDS DS 799, Master's Thesis\\[0.5em]
+    \small \textbf{Thesis Advisor:} Siddharth Mishra-Sharma\\
+    \small Department of Computing \& Data Sciences / Department of Physics
+}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\onehalfspacing
+
+% -------------------------------------------------------
+\section{Problem Statement}
+
+Physics-informed neural networks encode physical knowledge in two fundamentally
+different ways. Some architectures are \textit{symmetry-constrained}: they are
+designed so that outputs obey known symmetries (e.g., rotational equivariance)
+regardless of what the network has learned internally. Others are
+\textit{physics-explicit}: they directly parameterize a physical quantity such
+as an energy or Hamiltonian, enforcing conservation laws through the structure
+of the computation itself. Both approaches achieve strong empirical performance
+on physical dynamics tasks. But a foundational question has not been answered:
+
+\begin{center}
+\textit{Do physics-explicit and symmetry-constrained architectures develop the same internal representations when trained on the same physical system, or do they discover fundamentally different computational strategies to produce the right answer?}
+\end{center}
+
+More concretely: when a network trained on Coulomb dynamics produces accurate
+predictions, has it learned Coulomb's law, or has it found a different pattern
+that happens to generalize within the training distribution? Symmetry
+constraints guarantee that outputs transform correctly under rotation.
+Physics-explicit structure guarantees energy conservation. Neither guarantee
+tells us whether the network's hidden representations correspond to physically
+meaningful quantities (forces, charge interactions, distance-dependent
+potentials).
+
+This thesis applies mechanistic interpretability methods to directly examine,
+compare, and characterize the internal representations of five neural
+architectures spanning a spectrum from physics-explicit to fully unconstrained,
+all trained on an identical Coulomb particle dynamics task where ground-truth
+physical quantities are analytically computable at every point.
+
+% -------------------------------------------------------
+\section{Background}
+
+\subsection{A Spectrum of Physics Priors}
+
+Modern physics-informed neural networks occupy a spectrum based on how deeply
+physical knowledge is encoded:
+
+\begin{center} \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{>{\bfseries}lll} \toprule Tier & Architecture & Physics Prior
+    \\ \midrule Physics-explicit & Hamiltonian Neural Network & Learns energy
+    $H(q,p)$ directly; \\ & & conservation enforced by construction \\ \midrule
+    Symmetry-        & EGNN                       & Equivariant message passing
+    \\ constrained      & Attention EGNN             & Equivariant + learned
+    interaction weights \\ & Equivariant Transformer    & Equivariant attention
+  (Equiformer) \\ \midrule Unconstrained    & Non-equivariant GNN        &
+Permutation symmetry only \\ & MLP                        & No structural prior
+\\ \bottomrule \end{tabular} \end{center}
+
+\subsection{Equivariant Graph Neural Networks}
+
+The EGNN \cite{satorras2021en} performs message passing with coordinate updates
+    constructed from equivariant operations on relative position vectors,
+    ensuring $f(Rx, Rv) = R \cdot f(x,v)$ for all $R \in \mathrm{SO}(3)$. Each
+    layer computes: \begin{align} m_{ij} &= \phi_e(h_i,\, h_j,\, \|x_i -
+    x_j\|^2,\, a_{ij}) \\ x_i'   &= x_i + \sum_{j \neq i} (x_i -
+  x_j)\,\phi_x(m_{ij}) \\ h_i' &= \phi_h\!\left(h_i,\, \textstyle\sum_{j \neq i}
+m_{ij}\right) \end{align} where $h_i$ are node features, $x_i$ positions, and
+$\phi_e, \phi_x, \phi_h$ learned MLPs.
+
+\subsection{Hamiltonian Neural Networks}
+
+Hamiltonian Neural Networks (HNNs) \cite{greydanus2019hamiltonian} learn a
+scalar function $\mathcal{H}_\theta(q, p)$ and define dynamics via Hamilton's
+equations: \[ \dot{q} = \frac{\partial \mathcal{H}_\theta}{\partial p}, \qquad
+\dot{p} = -\frac{\partial \mathcal{H}_\theta}{\partial q} \] The loss penalizes
+violations of these equations, so the network is explicitly trained to model
+conserved energy. For Coulomb dynamics, a well-trained HNN should recover
+$\mathcal{H} = \sum_i \frac{p_i^2}{2m} + \sum_{i < j} \frac{q_i q_j}{\|x_i -
+x_j\|}$.
+
+\subsection{Equivariant Transformers}
+
+Equiformer \cite{liao2022equiformer} replaces message passing with equivariant
+attention over irreducible representations of SO(3), achieving the same symmetry
+guarantees as EGNN through a different computational mechanism. This enables a
+direct test of whether symmetry-constrained architectures converge to similar
+internal representations regardless of their specific implementation.
+
+\subsection{Mechanistic Interpretability}
+
+Mechanistic interpretability \cite{olah2020zoom, nanda2023progress} aims to
+reverse-engineer the algorithms neural networks implement. This thesis uses four
+complementary tools: \begin{itemize} \item \textbf{Linear probing:} Train
+  lightweight classifiers on internal activations to test whether specific
+  physical quantities are linearly encoded at each layer. \item \textbf{Causal
+  intervention / activation patching:} Corrupt a specific input (e.g., flip
+  charge $q_i$) and trace which components causally carry that change to the
+  output. \item \textbf{Probing + ablation loop:} After identifying a probed
+  feature (e.g., distance encoded at layer 2), ablate that direction in
+  representation space and measure the resulting performance drop, upgrading
+  from ``the model encodes $X$'' to ``the model \textit{uses} $X$ to make
+  predictions.'' \item \textbf{Representational similarity (CKA):} Compare the
+  geometry of internal representations across architectures to test whether
+different models develop structurally equivalent solutions. \end{itemize}
+
+\subsection{The Coulomb Dynamics Testbed}
+
+$N$ particles with charges $q_i \in \{-1, +1\}$ interact via Coulomb forces: \[
+F_{ij} = q_i q_j \frac{x_i - x_j}{\|x_i - x_j\|^3} \] Given initial positions
+and velocities, the task is to predict positions after $T = 1000$ integration
+steps. The governing law is fully known, providing ground-truth physical
+quantities (pairwise distances, charge products, force magnitudes and
+directions, total energy) against which internal representations can be
+directly evaluated. This is the key advantage of this testbed over molecular or
+protein datasets: there is no ambiguity about what the model ``should'' be
+computing.
+
+% -------------------------------------------------------
+\section{Proposed Research}
+
+\subsection{Central Thesis Claim}
+
+We hypothesize that physics-explicit inductive bias (HNN) and symmetry-based
+inductive bias (EGNN, Equiformer) both improve generalization, but produce
+\textit{fundamentally different} internal representations. Specifically: only
+physics-explicit architectures will develop hidden representations that directly
+correspond to physical law (i.e., probes for Coulomb potential and energy will
+succeed at intermediate layers), while symmetry-constrained architectures will
+encode physically interpretable geometry (distances, relative positions) without
+necessarily encoding the force law itself.
+
+\subsection{Research Questions}
+
+\begin{enumerate} \item Do internal representations encode physically
+  interpretable quantities (pairwise distance, charge-product sign, force
+  magnitude, force direction, potential energy), and at which layers do these
+  emerge across architectures? \item Are probed representations causally active
+  (does ablating a probed direction degrade performance, or is it a correlate
+  rather than a cause?) \item Do equivariant architectures with different
+  mechanisms (EGNN vs.\ Equiformer) converge to structurally similar
+  representations (via CKA), or does the implementation of symmetry matter?
+  \item Does the HNN's explicit energy parameterization produce representations
+    more aligned with Coulomb physics than symmetry-constrained models, despite
+    comparable output accuracy? \item Do any architectures exhibit grokking (a
+    delayed generalization transition), and if so, does the emergence of
+    physics-aligned representations coincide with this transition?
+\end{enumerate}
+
+\subsection{Architecture Suite}
+
+Five architectures will be trained on the identical Coulomb dynamics dataset
+under matched hyperparameter conditions:
+
+\begin{center} \renewcommand{\arraystretch}{1.3} \begin{tabular}{llll} \toprule
+  \textbf{Architecture}        & \textbf{Tier}             &
+  \textbf{Equivariant?} & \textbf{Key Question} \\ \midrule Hamiltonian NN &
+  Physics-explicit          & Partial & Does it learn $H$? \\ EGNN &
+  Symmetry-constrained      & Yes     & Baseline physics GNN \\ Attention EGNN &
+  Symmetry-constrained      & Yes & Does attention learn 1/$r^2$? \\ Equivariant
+  Transformer      & Symmetry-constrained      & Yes     & Same symmetry,
+different mechanism \\ Non-equivariant GNN          & Unconstrained & No      &
+What breaks without symmetry? \\ \bottomrule \end{tabular} \end{center}
+
+\subsection{Experimental Plan}
+
+\textbf{Phase 1: Probing for Physical Quantities}
+
+For each architecture, extract hidden activations at every layer and train
+linear probes to predict: (a) pairwise Euclidean distance $\|x_i - x_j\|$, (b)
+charge product $q_i q_j \in \{-1, +1\}$, (c) force magnitude $\|F_{ij}\|$, (d)
+force direction $\hat{F}_{ij}$, (e) total potential energy $U = \sum_{i<j} q_i
+q_j / \|x_i - x_j\|$.
+
+This produces a layer-by-layer ``physics encoding profile'' for each
+architecture, revealing what is encoded, at what depth, and whether the tier of
+physics prior determines the profile.
+
+\textbf{Phase 2: Causal Verification}
+
+Probing reveals correlation, not causation. For each identified encoding, we
+perform causal ablation: project out the probed direction from the residual
+stream / hidden state, re-run inference, and measure the MSE increase. We
+additionally perform activation patching by corrupting a single particle's
+charge (flip $q_i \to -q_i$) and tracing which layers / components carry this
+change to the output trajectory. Together, these establish which physical
+representations are causally necessary for correct prediction.
+
+\textbf{Phase 3: Representational Geometry}
+
+Compute centered kernel alignment (CKA) between all pairs of architectures at
+matched depths to produce a representational similarity matrix. This reveals
+whether the two equivariant GNNs (EGNN, Attention EGNN), the equivariant
+transformer, and the HNN develop structurally equivalent or divergent internal
+representations despite producing similar outputs.
+
+\textbf{Phase 4: Generalization Dynamics}
+
+Train all models across a range of dataset sizes with extended training budgets.
+Track probe accuracy for key physical quantities over training steps, alongside
+train and validation MSE, to test for grokking-like transitions. The hypothesis:
+for physics-explicit architectures, the emergence of correct physics
+representations and generalization co-occur; for symmetry-constrained models,
+geometry (distance, direction) is learned early but force magnitude may never be
+explicitly encoded.
+
+% -------------------------------------------------------
+\section{Significance}
+
+This work makes contributions at the intersection of two active research areas:
+physics-informed machine learning and mechanistic interpretability.
+
+\textbf{For physics ML:} The field currently evaluates models by output accuracy
+and symmetry preservation. This thesis introduces a third axis of evaluation,
+\textit{representational alignment with physical law}, and provides the first
+systematic comparison of physics-explicit vs.\ symmetry-constrained vs.\
+unconstrained architectures on this axis. The results will inform the principled
+selection of architecture type for scientific ML tasks where interpretability
+and trustworthiness matter.
+
+\textbf{For interpretability:} The overwhelming majority of mechanistic
+interpretability work targets transformer language models. Physics simulation
+models are an underexplored domain with a critical advantage: the ground-truth
+computation is analytically known. This makes it possible to ask precise,
+falsifiable questions (``does layer 3 encode Coulomb potential?'') rather than
+open-ended ones (``what does this attention head do?''). Insights about
+representation formation in physics models may generalize to other structured
+scientific domains.
+
+\textbf{The broader question:} Does baking in known symmetries cause a model to
+internalize the corresponding physics, or merely constrain its output
+transformations while leaving internal computation opaque? This distinction
+matters practically: a model that has internalized Coulomb's law should
+generalize to novel charge configurations and particle counts; one that has
+learned a correlated shortcut may not.
+
+\bibliographystyle{unsrtnat}
+\bibliography{../thesis/references}
+
+\end{document}
