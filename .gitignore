@@ -36,3 +36,5 @@ artifacts/
 *.lof
 *.lot
 docs/ref/
+*.nav
+*.snm

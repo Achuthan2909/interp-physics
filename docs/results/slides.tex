@@ -1,0 +1,564 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+\usepackage{adjustbox}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+\usetikzlibrary{positioning,arrows.meta,fit,calc}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamercolor{frametitle}{fg=black,bg=white}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamertemplate{frametitle}{%
+  \vspace{1.2mm}\hspace{1mm}\insertframetitle\par\vspace{0.6mm}%
+}
+\setbeamertemplate{footline}{%
+  \hfill{\scriptsize\color{black!40}\insertframenumber}\hspace{3mm}\vspace{1mm}%
+}
+\setbeamersize{text margin left=5.5mm,text margin right=5.5mm}
+
+\definecolor{s1}{HTML}{2A78D6}
+\definecolor{s2}{HTML}{EB6834}
+\definecolor{s3}{HTML}{1BAF7A}
+\definecolor{s4}{HTML}{EDA100}
+\definecolor{s5}{HTML}{E87BA4}
+\definecolor{s6}{HTML}{008300}
+
+% Scale a diagram down only if it is wider or taller than the slide.
+\newcommand{\fitdiagram}[1]{%
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.80\textheight}#1\end{adjustbox}%
+}
+\newcommand{\tablenote}[1]{\par\vspace{3.5mm}{\scriptsize\color{black!55}#1\par}}
+
+\tikzset{
+  p1/.style={fill=orange!30, draw=orange!65!black},
+  p2/.style={fill=green!22, draw=green!50!black},
+  p3/.style={fill=violet!22, draw=violet!55!black},
+  particle/.style={circle, minimum size=6.2mm, inner sep=0pt, font=\scriptsize},
+  cell/.style={minimum width=1.22cm, minimum height=0.40cm, inner sep=1pt,
+               font=\scriptsize, rounded corners=1pt},
+  group/.style={draw, rounded corners=3pt, inner sep=4pt},
+  lbl/.style={font=\scriptsize\itshape, align=center, text=black},
+  arr/.style={-{Stealth[length=1.8mm]}, semithick},
+  badge/.style={circle, draw, fill=white, minimum size=3.3mm, inner sep=0pt,
+                font=\tiny\bfseries},
+}
+
+% #1 hidden width, #2 message width, #3 layer count,
+% #4 message formula, #5 extra box between messages and the sum (may be empty)
+\newcommand{\GnnBlock}[5]{%
+\begin{tikzpicture}[x=0.96cm,y=0.92cm]
+  \node[particle,p1] (n1) at (0,0.85) {1};
+  \node[particle,p2] (n2) at (0.78,0) {2};
+  \node[particle,p3] (n3) at (0,-0.85) {3};
+  \draw (n1)--(n2) (n2)--(n3) (n3)--(n1);
+  \node[lbl, below=1pt of n3] {3 of 10\\[-1pt] charge, $x$, $v$};
+
+  \node[cell,p1] (h1) at (3.05,0.68) {$h_1$};
+  \node[cell,p2] (h2) at (3.05,0) {$h_2$};
+  \node[cell,p3] (h3) at (3.05,-0.68) {$h_3$};
+  \node[group, fit=(h1)(h3)] (H) {};
+  \node[lbl, below=1pt of H] {node embeddings\\[-1pt]\textup{width #1}};
+
+  \draw[arr] (1.15,0.05) -- node[badge,pos=0.45]{1} (H.west);
+  \node[font=\scriptsize, above=1pt] at ($(1.15,0.05)!0.45!(H.west)$) {emb};
+
+  \node[cell,p1] (m12) at (6.15,0.68) {$m_{12}$};
+  \node[cell,p1] (m13) at (7.45,0.68) {$m_{13}$};
+  \node[cell,p2] (m21) at (6.15,0) {$m_{21}$};
+  \node[cell,p2] (m23) at (7.45,0) {$m_{23}$};
+  \node[cell,p3] (m31) at (6.15,-0.68) {$m_{31}$};
+  \node[cell,p3] (m32) at (7.45,-0.68) {$m_{32}$};
+  \node[group, fit=(m12)(m32)] (M) {};
+  \node[lbl, below=1pt of M] {messages\\[-1pt]\textup{width #2}};
+  \draw[arr] (H.east) -- node[badge,pos=0.5]{2} (M.west);
+  \node[font=\scriptsize, above=1pt] at ($(H.east)!0.5!(M.west)$) {msg};
+
+  \ifstrempty{#5}{%
+    \def\Ax{10.15}\def\Sx{13.35}%
+    \node[cell,p1] (a1) at (\Ax,0.68) {$\sum m_1$};
+    \node[cell,p2] (a2) at (\Ax,0) {$\sum m_2$};
+    \node[cell,p3] (a3) at (\Ax,-0.68) {$\sum m_3$};
+  }{%
+    \def\Ax{12.35}\def\Sx{15.55}%
+    \node[group, align=center, font=\scriptsize, text width=1.5cm] (G) at (9.75,0) {#5};
+    \node[cell,p1] (a1) at (\Ax,0.68) {$\sum m_1$};
+    \node[cell,p2] (a2) at (\Ax,0) {$\sum m_2$};
+    \node[cell,p3] (a3) at (\Ax,-0.68) {$\sum m_3$};
+    \draw[arr] (M.east) -- (G.west);
+  }
+  \node[group, fit=(a1)(a3)] (A) {};
+  \node[lbl, below=1pt of A] {sum};
+  \ifstrempty{#5}{%
+    \draw[arr] (M.east) -- node[badge,pos=0.5]{3} (A.west);
+    \node[font=\scriptsize, above=1pt] at ($(M.east)!0.5!(A.west)$) {agg};
+  }{%
+    \draw[arr] (G.east) -- node[badge,pos=0.5]{3} (A.west);
+    \node[font=\scriptsize, above=1pt] at ($(G.east)!0.5!(A.west)$) {agg};
+  }
+
+  \node[cell,p1] (s1) at (\Sx,0.68) {$h_1$};
+  \node[cell,p2] (s2) at (\Sx,0) {$h_2$};
+  \node[cell,p3] (s3) at (\Sx,-0.68) {$h_3$};
+  \node[group, fit=(s1)(s3)] (S) {};
+  \node[lbl, below=1pt of S] {updated memory};
+  \draw[arr] (A.east) -- node[badge,pos=0.5]{4} (S.west);
+  \node[font=\scriptsize, above=1pt] at ($(A.east)!0.5!(S.west)$) {mem};
+
+  \node[cell,p1] (v1) at (\Ax,-2.85) {$v_1$};
+  \node[cell,p2] (v2) at (\Ax,-3.5) {$v_2$};
+  \node[cell,p3] (v3) at (\Ax,-4.15) {$v_3$};
+  \node[group, fit=(v1)(v3)] (V) {};
+  \node[lbl, below=1pt of V] {velocity};
+  \draw[arr] (M.south) ++(1.15,0) -- ++(0,-1.0) -| (V.north);
+  \node[badge] at ($(M.south)+(1.15,-0.5)$) {5};
+  \node[font=\scriptsize, right=3pt] at ($(M.south)+(1.15,-0.5)$) {vel};
+
+  \node[group, font=\scriptsize, align=center] (O) at (\Sx,-3.5) {predicted\\position\\$x+v$};
+  \draw[arr] (V.east) -- node[badge,pos=0.5]{6} (O.west);
+
+  \node[font=\scriptsize, anchor=north] (F1) at ($(H.west)!0.5!(S.east)+(0,-5.25)$) {\mbox{$#4$}};
+  \node[font=\scriptsize, anchor=north] at ($(F1.south)+(0,0.02)$)
+    {\mbox{$v \leftarrow v+\sum_j\tanh(w^{\top}m_{ij})\,(x_i-x_j)$
+     \qquad
+     $h \leftarrow h+\mathrm{ReLU}(W[h,\sum_j m_{ij}])$}};
+
+  \ifnum#3>1
+    \draw[arr,dashed] (S.north) -- ($(S.north)+(0,0.55)$)
+      -- ($(M.north)+(0,0.55)$) -- (M.north);
+    \node[font=\scriptsize] at ($(M.north)!0.5!(S.north)+(0,0.78)$) {$\times$ #3 layers};
+  \fi
+\end{tikzpicture}%
+}
+
+\newcommand{\MlpBlock}[2]{%
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[cell,p1, minimum width=2.4cm] (r1) at (0,0.75) {charge, $x$, $v$ of 1};
+  \node[cell,p2, minimum width=2.4cm] (r2) at (0,0) {charge, $x$, $v$ of 2};
+  \node[cell,p3, minimum width=2.4cm] (r3) at (0,-0.75) {charge, $x$, $v$ of 3};
+  \node[group, fit=(r1)(r3)] (In) {};
+  \node[lbl, below=1pt of In] {3 of 10 particles\\[-1pt]\textup{edges unused}};
+
+  \node[group, font=\scriptsize, align=center, minimum width=1.8cm, minimum height=1.5cm]
+    (F) at (3.85,0) {one vector\\80};
+  \draw[arr] (In.east) -- node[badge,pos=0.5]{1} (F.west);
+  \node[font=\scriptsize, above=1pt] at ($(In.east)!0.5!(F.west)$) {flatten};
+
+  \node[group, font=\scriptsize, align=center, minimum width=2.5cm, minimum height=1.7cm]
+    (H) at (7.0,0) {ReLU layer\\width #1\\$\times$ #2};
+  \draw[arr] (F.east) -- node[badge,pos=0.5]{2} (H.west);
+
+  \node[group, font=\scriptsize, align=center, minimum width=2.2cm, minimum height=1.5cm]
+    (D) at (10.3,0) {linear map\\30 numbers\\$10\times 3$};
+  \draw[arr] (H.east) -- node[badge,pos=0.5]{3} (D.west);
+
+  \node[group, font=\scriptsize, align=center] (O) at (13.3,0) {predicted\\position\\$x+\Delta x$};
+  \draw[arr] (D.east) -- node[badge,pos=0.5]{4} (O.west);
+\end{tikzpicture}%
+}
+
+\newcommand{\HnnBlock}[2]{%
+\begin{tikzpicture}[x=0.98cm,y=0.95cm]
+  \node[particle,p1] (n1) at (0,0.8) {1};
+  \node[particle,p2] (n2) at (0.72,0) {2};
+  \node[particle,p3] (n3) at (0,-0.8) {3};
+  \draw (n1)--(n2) (n2)--(n3) (n3)--(n1);
+  \node[lbl, below=1pt of n3] {3 of 10\\[-1pt] charge, $x$, $v$};
+
+  \node[cell,p1] (h1) at (2.9,0.68) {$h_1$};
+  \node[cell,p2] (h2) at (2.9,0) {$h_2$};
+  \node[cell,p3] (h3) at (2.9,-0.68) {$h_3$};
+  \node[group, fit=(h1)(h3)] (H) {};
+  \node[lbl, below=1pt of H] {node embeddings\\[-1pt]\textup{width #1}};
+  \draw[arr] (1.05,0) -- node[badge,pos=0.45]{1} (H.west);
+  \node[font=\scriptsize, above=1pt] at ($(1.05,0)!0.45!(H.west)$) {emb};
+
+  \node[cell,p1] (e12) at (5.75,0.68) {$e_{12}$};
+  \node[cell,p2] (e21) at (5.75,0) {$e_{21}$};
+  \node[cell,p3] (e31) at (5.75,-0.68) {$e_{31}$};
+  \node[group, fit=(e12)(e31)] (E) {};
+  \node[lbl, below=1pt of E]
+    {pair scalars\\[-1pt]\textup{ReLU width #1, $\times$ #2}\\[-1pt]\textup{from $h_i$, $h_j$, distance}};
+  \draw[arr] (H.east) -- node[badge,pos=0.5]{2} (E.west);
+  \node[font=\scriptsize, above=1pt] at ($(H.east)!0.5!(E.west)$) {pair};
+
+  \node[group, font=\scriptsize, align=center, text width=2.5cm] (P) at (9.0,0)
+    {$V=\tfrac12\sum e_{ij}$\\[2pt]$H=\tfrac12\|v\|^2+V$};
+  \node[lbl, below=1pt of P] {energy};
+  \draw[arr] (E.east) -- node[badge,pos=0.5]{3} (P.west);
+
+  \node[group, font=\scriptsize, align=center, text width=3.1cm] (I) at (13.1,0)
+    {$v \leftarrow v-\Delta t\,\partial H/\partial x$\\[2pt]
+     $x \leftarrow x+\Delta t\,\partial H/\partial v$\\[2pt]
+     $\times\,10$,\ $\Delta t=0.1$};
+  \node[lbl, above=1pt of I] {integration};
+  \draw[arr] (P.east) -- node[badge,pos=0.5]{4} (I.west);
+
+  \node[group, font=\scriptsize, align=center] (O) at (13.1,-2.4) {predicted position\\final $x$};
+  \draw[arr] (I.south) -- node[badge,pos=0.5]{5} (O.north);
+\end{tikzpicture}%
+}
+
+\newcommand{\EqtBlock}[3]{%
+\begin{tikzpicture}[x=0.96cm,y=0.92cm]
+  \node[particle,p1] (n1) at (0,0.85) {1};
+  \node[particle,p2] (n2) at (0.78,0) {2};
+  \node[particle,p3] (n3) at (0,-0.85) {3};
+  \draw (n1)--(n2) (n2)--(n3) (n3)--(n1);
+  \node[lbl, below=1pt of n3] {3 of 10\\[-1pt] charge, $x$, $v$};
+
+  \node[cell,p1] (h1) at (3.0,0.68) {$h_1$};
+  \node[cell,p2] (h2) at (3.0,0) {$h_2$};
+  \node[cell,p3] (h3) at (3.0,-0.68) {$h_3$};
+  \node[group, fit=(h1)(h3)] (H) {};
+  \node[lbl, below=1pt of H] {node embeddings\\[-1pt]\textup{width #1}};
+  \draw[arr] (1.15,0.05) -- node[badge,pos=0.45]{1} (H.west);
+  \node[font=\scriptsize, above=1pt] at ($(1.15,0.05)!0.45!(H.west)$) {emb};
+
+  \node[cell,p1] (c12) at (6.15,0.68) {$c_{12}$};
+  \node[cell,p1] (c13) at (7.45,0.68) {$c_{13}$};
+  \node[cell,p2] (c21) at (6.15,0) {$c_{21}$};
+  \node[cell,p2] (c23) at (7.45,0) {$c_{23}$};
+  \node[cell,p3] (c31) at (6.15,-0.68) {$c_{31}$};
+  \node[cell,p3] (c32) at (7.45,-0.68) {$c_{32}$};
+  \node[group, fit=(c12)(c32)] (C) {};
+  \node[lbl, below=1pt of C] {pair content\\[-1pt]\textup{width #1}};
+  \draw[arr] (H.east) -- node[badge,pos=0.5]{2} (C.west);
+  \node[font=\scriptsize, above=1pt] at ($(H.east)!0.5!(C.west)$) {pair};
+
+  \node[group, font=\scriptsize, align=center, text width=2.15cm] (Att) at (10.05,0)
+    {#2-head\\attention\\softmax over $j$};
+  \draw[arr] (C.east) -- node[badge,pos=0.5]{3} (Att.west);
+
+  \node[cell,p1] (s1) at (12.85,0.68) {$h_1$};
+  \node[cell,p2] (s2) at (12.85,0) {$h_2$};
+  \node[cell,p3] (s3) at (12.85,-0.68) {$h_3$};
+  \node[group, fit=(s1)(s3)] (S) {};
+  \node[lbl, below=1pt of S] {updated memory};
+  \draw[arr] (Att.east) -- node[badge,pos=0.5]{4} (S.west);
+  \node[font=\scriptsize, above=1pt] at ($(Att.east)!0.5!(S.west)$) {mem};
+
+  \node[cell,p1] (v1) at (10.05,-2.85) {$v_1$};
+  \node[cell,p2] (v2) at (10.05,-3.5) {$v_2$};
+  \node[cell,p3] (v3) at (10.05,-4.15) {$v_3$};
+  \node[group, fit=(v1)(v3)] (V) {};
+  \node[lbl, below=1pt of V] {velocity};
+  \draw[arr] (C.south) ++(1.15,0) -- ++(0,-1.0) -| (V.north);
+  \node[badge] at ($(C.south)+(1.15,-0.5)$) {5};
+  \node[font=\scriptsize, right=3pt] at ($(C.south)+(1.15,-0.5)$) {vel};
+
+  \node[group, font=\scriptsize, align=center] (O) at (12.85,-3.5) {predicted\\position\\$x+v$};
+  \draw[arr] (V.east) -- node[badge,pos=0.5]{6} (O.west);
+
+  \node[font=\scriptsize, anchor=north] (F1) at ($(H.west)!0.5!(S.east)+(0,-5.25)$)
+    {\mbox{$c_{ij}=Wh_i+Uh_j+V\|x_i-x_j\|^2$
+     \qquad
+     $h \leftarrow h+\mathrm{ReLU}(W[h,\sum_j\bar\alpha_{ij}c_{ij}])$}};
+  \node[font=\scriptsize, anchor=north] at ($(F1.south)+(0,0.02)$)
+    {\mbox{$v \leftarrow v+\sum_j \tanh(u^{\top} c_{ij})\,\bar\alpha_{ij}\,(x_i-x_j)$
+     \qquad
+     $\bar\alpha_{ij}$: attention weight, averaged over heads}};
+
+  \ifnum#3>1
+    \draw[arr,dashed] (S.north) -- ($(S.north)+(0,0.55)$)
+      -- ($(C.north)+(0,0.55)$) -- (C.north);
+    \node[font=\scriptsize] at ($(C.north)!0.5!(S.north)+(0,0.78)$) {$\times$ #3 layers};
+  \fi
+\end{tikzpicture}%
+}
+
+\newcommand{\probehead}{%
+  \toprule
+  Fact & Embed & Block 1 & Block 2 & Block 3 & Block 4 \\
+  \midrule
+}
+
+\begin{document}
+
+\begin{frame}{EGNN, big \textmd{\small 4 layers, hidden 64, message 32}}
+\centering
+\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{}}
+\end{frame}
+
+\begin{frame}{EGNN, small \textmd{\small 1 layer, hidden 8, message 4}}
+\centering
+\fitdiagram{\GnnBlock{8}{4}{1}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{}}
+\end{frame}
+
+\begin{frame}{Attention EGNN, big \textmd{\small 4 layers, hidden 64, message 32}}
+\centering
+\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{softmax\\over $j$}}
+\end{frame}
+
+\begin{frame}{Attention EGNN, small \textmd{\small 1 layer, hidden 8, message 4}}
+\centering
+\fitdiagram{\GnnBlock{8}{4}{1}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{softmax\\over $j$}}
+\end{frame}
+
+\begin{frame}{Non-equivariant GNN, big \textmd{\small 4 layers, hidden 64, message 32}}
+\centering
+\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2+A[x_i,x_j])}{}}
+\end{frame}
+
+\begin{frame}{Non-equivariant GNN, small \textmd{\small 1 layer, hidden 8, message 4}}
+\centering
+\fitdiagram{\GnnBlock{8}{4}{1}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2+A[x_i,x_j])}{}}
+\end{frame}
+
+\begin{frame}{MLP, big \textmd{\small 4 layers, hidden 256}}
+\centering
+\fitdiagram{\MlpBlock{256}{4}}
+\end{frame}
+
+\begin{frame}{MLP, small \textmd{\small 1 layer, hidden 16}}
+\centering
+\fitdiagram{\MlpBlock{16}{1}}
+\end{frame}
+
+\begin{frame}{Hamiltonian network, big \textmd{\small potential width 64, 2 layers, 10 steps}}
+\centering
+\fitdiagram{\HnnBlock{64}{2}}
+\end{frame}
+
+\begin{frame}{Hamiltonian network, small \textmd{\small potential width 8, 1 layer, 10 steps}}
+\centering
+\fitdiagram{\HnnBlock{8}{1}}
+\end{frame}
+
+\begin{frame}{Equivariant transformer, big \textmd{\small 4 layers, hidden 64, 4 heads}}
+\centering
+\fitdiagram{\EqtBlock{64}{4}{4}}
+\end{frame}
+
+\begin{frame}{Equivariant transformer, small \textmd{\small 1 layer, hidden 8, 2 heads}}
+\centering
+\fitdiagram{\EqtBlock{8}{2}{1}}
+\end{frame}
+
+\begin{frame}{Position error \textmd{\small validation MSE over training, big and small networks}}
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=7mm, yticklabels at=edge left},
+  width=0.50\textwidth,
+  height=0.66\textheight,
+  xlabel={Epoch},
+  ymode=log,
+  ymin=0.008, ymax=100,
+  xmin=1, xmax=100,
+  xtick={1,20,40,60,80,100},
+  ytick={0.01,0.1,1,10,100},
+  ymajorgrids, grid style={black!10},
+  axis line style={black!45},
+  tick style={black!45},
+  tick label style={font=\scriptsize},
+  label style={font=\small},
+  title style={font=\small\bfseries, yshift=-1.5mm},
+  every axis plot/.append style={line width=1.1pt, line join=round},
+  legend cell align={left},
+]
+\nextgroupplot[title={Big\strut}, ylabel={Validation MSE},
+  legend to name=mselegend,
+  legend columns=3,
+  legend style={font=\scriptsize, draw=none, fill=none, text=black,
+                /tikz/every even column/.append style={column sep=3mm}}]
+\addplot[s1, line width=1.1pt] table[x=epoch,y=egnn_big,col sep=comma] {val_mse.csv};
+\addlegendentry{EGNN\enspace{\color{black!55}0.090 / 0.129}}
+\addplot[s2, line width=1.1pt] table[x=epoch,y=attn_big,col sep=comma] {val_mse.csv};
+\addlegendentry{Attention EGNN\enspace{\color{black!55}0.014 / 0.125}}
+\addplot[s3, line width=1.1pt] table[x=epoch,y=noneq_big,col sep=comma] {val_mse.csv};
+\addlegendentry{Non-equivariant GNN\enspace{\color{black!55}0.079 / 0.131}}
+\addplot[s4, line width=1.1pt] table[x=epoch,y=mlp_big,col sep=comma] {val_mse.csv};
+\addlegendentry{MLP\enspace{\color{black!55}0.222 / 0.140}}
+\addplot[s5, line width=1.1pt] table[x=epoch,y=hnn_big,col sep=comma] {val_mse.csv};
+\addlegendentry{Hamiltonian\enspace{\color{black!55}0.126 / 0.125}}
+\addplot[s6, line width=1.1pt] table[x=epoch,y=eqt_big,col sep=comma] {val_mse.csv};
+\addlegendentry{Equivariant transformer\enspace{\color{black!55}0.051 / 0.085}}
+\nextgroupplot[title={Small\strut}]
+\addplot[s1, line width=1.1pt] table[x=epoch,y=egnn_small,col sep=comma] {val_mse.csv};
+\addplot[s2, line width=1.1pt] table[x=epoch,y=attn_small,col sep=comma] {val_mse.csv};
+\addplot[s3, line width=1.1pt] table[x=epoch,y=noneq_small,col sep=comma] {val_mse.csv};
+\addplot[s4, line width=1.1pt] table[x=epoch,y=mlp_small,col sep=comma] {val_mse.csv};
+\addplot[s5, line width=1.1pt] table[x=epoch,y=hnn_small,col sep=comma] {val_mse.csv};
+\addplot[s6, line width=1.1pt] table[x=epoch,y=eqt_small,col sep=comma] {val_mse.csv};
+\end{groupplot}
+\end{tikzpicture}
+
+\vspace{0.5mm}
+\pgfplotslegendfromname{mselegend}
+\tablenote{Numbers beside each name: validation MSE at epoch 100, big / small.}
+\end{frame}
+
+\begin{frame}{Probe scores: EGNN}
+\centering\small
+\begin{tabular}{lrrrrr}
+\probehead
+Charge & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Distance & & 0.999 & 0.982 & 0.957 & 0.800 \\
+Charge product & & 0.997 & 0.362 & 0.432 & 0.132 \\
+Force magnitude & & 0.951 & 0.561 & 0.468 & 0.345 \\
+Potential energy & & 0.982 & 0.897 & 0.820 & 0.734 \\
+Force direction & & 0.017 & $-0.004$ & 0.004 & 0.004 \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation $R^2$ of a linear probe. Force direction is a mean cosine, not an $R^2$.}
+\end{frame}
+
+\begin{frame}{Probe scores: Attention EGNN}
+\centering\small
+\begin{tabular}{lrrrrr}
+\probehead
+Charge & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Distance & & 0.397 & 0.741 & 0.759 & 0.502 \\
+Charge product & & 0.273 & 0.480 & 0.509 & 0.257 \\
+Force magnitude & & 0.813 & 0.645 & 0.706 & 0.788 \\
+Potential energy & & 0.588 & 0.761 & 0.700 & 0.742 \\
+Force direction & & 0.021 & 0.026 & 0.045 & 0.084 \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation $R^2$ of a linear probe. Force direction is a mean cosine, not an $R^2$.}
+\end{frame}
+
+\begin{frame}{Probe scores: Non-equivariant GNN}
+\centering\small
+\begin{tabular}{lrrrrr}
+\probehead
+Charge & 1.000 & 1.000 & 1.000 & 0.989 & 0.981 \\
+Distance & & 0.993 & 0.968 & 0.944 & 0.695 \\
+Charge product & & 0.915 & 0.233 & 0.091 & 0.003 \\
+Force magnitude & & 0.860 & 0.400 & 0.393 & 0.240 \\
+Potential energy & & 0.896 & 0.732 & 0.632 & $-2.344$ \\
+Force direction & & 0.018 & $-0.004$ & 0.004 & $-0.004$ \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation $R^2$ of a linear probe. Force direction is a mean cosine, not an $R^2$.}
+\end{frame}
+
+\begin{frame}{Probe scores: MLP}
+\centering\small
+\begin{tabular}{lrrrr}
+\toprule
+Fact & Block 1 & Block 2 & Block 3 & Block 4 \\
+\midrule
+Charge & 0.909 & 0.733 & 0.520 & 0.345 \\
+Distance & 0.191 & 0.106 & 0.038 & $-0.013$ \\
+Charge product & $-0.007$ & $-0.033$ & $-0.051$ & $-0.062$ \\
+Force magnitude & $-0.024$ & $-0.048$ & $-0.061$ & $-0.075$ \\
+Potential energy & $-0.026$ & $-0.013$ & $-0.065$ & $-0.178$ \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation $R^2$ of a linear probe.}
+\end{frame}
+
+\begin{frame}{Probe scores: Hamiltonian network}
+\centering\small
+\begin{tabular}{lrrr}
+\toprule
+Fact & Embed & Block 1 & Block 2 \\
+\midrule
+Charge & 1.000 & & \\
+Distance & & 1.000 & 1.000 \\
+Charge product & & 0.012 & 1.000 \\
+Force magnitude & & 0.650 & 0.938 \\
+Potential energy & & 0.056 & 0.887 \\
+Net force & \multicolumn{3}{c}{0.085} \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation $R^2$ of a linear probe. Net force is a mean cosine, not an $R^2$.}
+\end{frame}
+
+\begin{frame}{Probe scores: Equivariant transformer}
+\centering\small
+\begin{tabular}{lrrrrr}
+\probehead
+Charge & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Distance & & 0.937 & 0.938 & 0.941 & 0.943 \\
+Charge product & & 0.000 & 0.005 & 0.020 & 0.040 \\
+Force magnitude & & 0.264 & 0.267 & 0.274 & 0.304 \\
+Potential energy & & 0.000 & 0.034 & 0.092 & 0.360 \\
+Force direction & & 0.129 & 0.096 & 0.076 & 0.041 \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation $R^2$ of a linear probe. Force direction is a mean cosine, not an $R^2$.}
+\end{frame}
+
+\begin{frame}{Deletions}
+\centering\footnotesize
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{llrr}
+\toprule
+Network & Removed & Before & After \\
+\midrule
+Non-equivariant GNN & Force magnitude, block 1 & 0.079 & 0.458 \\
+Hamiltonian network & Distance, block 2 & 0.126 & 0.323 \\
+Equivariant transformer & Distance, block 1 & 0.051 & 0.216 \\
+Non-equivariant GNN & Distance, block 1 & 0.079 & 0.114 \\
+Non-equivariant GNN & Charge product, block 1 & 0.079 & 0.102 \\
+Attention EGNN & Charge, block 2 & 0.014 & 0.028 \\
+EGNN & Charge product, block 1 & 0.090 & 0.103 \\
+Hamiltonian network & Distance, block 1 & 0.126 & 0.136 \\
+Non-equivariant GNN & Potential energy, block 1 & 0.079 & 0.086 \\
+Attention EGNN & Charge, embed & 0.014 & 0.019 \\
+MLP & Charge, block 1 & 0.222 & 0.211 \\
+Hamiltonian network & Charge, embed & 0.126 & 0.120 \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation MSE before and after the probe direction is removed.}
+\end{frame}
+
+\begin{frame}{Small networks}
+\centering\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Network & Error & Charge & Distance & $q_i q_j$ & $\|F\|$ & Potential & Force \\
+\midrule
+EGNN & 0.129 & 1.000 & 0.222 & 0.000 & 0.026 & $-0.002$ & $-0.225$ \\
+Attention EGNN & 0.125 & 1.000 & $-1.230$ & 0.276 & 0.245 & $-4.651$ & 0.387 \\
+Non-equivariant GNN & 0.131 & 1.000 & 0.011 & 0.002 & 0.008 & $-0.009$ & 0.002 \\
+Equivariant transformer & 0.085 & 1.000 & 0.937 & 0.000 & 0.264 & 0.000 & 0.788 \\
+Hamiltonian network & 0.125 & 1.000 & 0.907 & 0.990 & 0.478 & 0.754 & 0.214 \\
+MLP & 0.140 & 0.038 & 0.001 & $-0.003$ & $-0.007$ & $-0.005$ & \\
+\bottomrule
+\end{tabular}
+\tablenote{Error is validation MSE at epoch 100. Force is a mean cosine. The other columns are probe $R^2$.}
+\end{frame}
+
+\begin{frame}{Small-network deletions}
+\centering\small
+\begin{tabular}{llrr}
+\toprule
+Network & Removed & Before & After \\
+\midrule
+Equivariant transformer & Charge, embed & 0.085 & 0.298 \\
+Equivariant transformer & Distance, block 1 & 0.085 & 0.245 \\
+Attention EGNN & Charge, embed & 0.125 & 0.137 \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation MSE before and after the probe direction is removed.}
+\end{frame}
+
+\begin{frame}{Assignment 2}
+\centering\small
+\begin{tabular}{llrr}
+\toprule
+Assignment 2 run & Network here & Assignment 2 & Here \\
+\midrule
+Attention & Attention EGNN & 0.0103 & 0.014 \\
+Full EGNN & EGNN & 0.0945 & 0.090 \\
+No equivariance & Non-equivariant GNN & 0.0579 & 0.079 \\
+No residual & & 0.0896 & \\
+No velocity & & 0.0983 & \\
+No distance & & 0.1279 & \\
+No tanh & & 11.46 & \\
+\bottomrule
+\end{tabular}
+\tablenote{Validation MSE.}
+\end{frame}
+
+\end{document}
