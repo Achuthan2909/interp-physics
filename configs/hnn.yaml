@@ -7,7 +7,7 @@ model_kwargs:
 
 train:
   n_epochs: 100
-  batch_size: 32
+  batch_size: 64
   lr: 0.001
   seed: 0
   log_every: 20

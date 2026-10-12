@@ -13,6 +13,9 @@ import numpy as np
 import optax
 from flax import serialization
 
+EVAL_CHUNK = 500
+TRAIN_EVAL_SYSTEMS = 4000
+
 
 @dataclass
 class TrainConfig:
@@ -21,6 +24,7 @@ class TrainConfig:
     lr: float = 1e-3
     seed: int = 0
     log_every: int = 20
+    grad_clip: float = 1.0
 
 
 def mse_pos(pred: jnp.ndarray, target: jnp.ndarray) -> jnp.ndarray:
@@ -44,7 +48,7 @@ def train_model(
         train_data["edges"][:1],
     )
 
-    optimizer = optax.adam(cfg.lr)
+    optimizer = optax.chain(optax.clip_by_global_norm(cfg.grad_clip), optax.adam(cfg.lr))
     opt_state = optimizer.init(params)
 
     def _pred(p, nf, pos, vel, edges):
@@ -62,9 +66,26 @@ def train_model(
         return optax.apply_updates(params, updates), new_opt, loss
 
     @jax.jit
-    def eval_mse(params, node_feat, pos, vel, edges, target_pos):
+    def eval_sq_err(params, node_feat, pos, vel, edges, target_pos):
         pred = _pred(params, node_feat, pos, vel, edges)
-        return mse_pos(pred, target_pos)
+        return jnp.sum((pred - target_pos) ** 2)
+
+    def eval_mse(params, data, n_systems):
+        """MSE over the first ``n_systems`` systems, in chunks to bound memory."""
+        total = 0.0
+        for start in range(0, n_systems, EVAL_CHUNK):
+            stop = min(start + EVAL_CHUNK, n_systems)
+            total += float(
+                eval_sq_err(
+                    params,
+                    data["node_feat"][start:stop],
+                    data["pos"][start:stop],
+                    data["vel"][start:stop],
+                    data["edges"][start:stop],
+                    data["target_pos"][start:stop],
+                )
+            )
+        return total / data["target_pos"][:n_systems].size
 
     n_train = len(train_data["pos"])
     rng = np.random.default_rng(cfg.seed)
@@ -85,26 +106,9 @@ def train_model(
                 train_data["target_pos"][idx],
             )
 
-        tr = float(
-            eval_mse(
-                params,
-                train_data["node_feat"],
-                train_data["pos"],
-                train_data["vel"],
-                train_data["edges"],
-                train_data["target_pos"],
-            )
-        )
-        va = float(
-            eval_mse(
-                params,
-                val_data["node_feat"],
-                val_data["pos"],
-                val_data["vel"],
-                val_data["edges"],
-                val_data["target_pos"],
-            )
-        )
+        # Train error is tracked on a fixed subset so each epoch stays cheap.
+        tr = eval_mse(params, train_data, min(n_train, TRAIN_EVAL_SYSTEMS))
+        va = eval_mse(params, val_data, len(val_data["pos"]))
         train_losses.append(tr)
         val_losses.append(va)
 

@@ -51,7 +51,7 @@ def compute_physics_labels(
     """Analytic quantities at *initial* positions for probing.
 
     Returns arrays shaped for pairwise (i,j) or system-level probes:
-      pairwise_dist:     [B, N, N]
+      pairwise_dist:     [B, N, N]     (true distance, no soft cutoff)
       charge_product:    [B, N, N]
       force_magnitude:   [B, N, N]
       force_direction:   [B, N, N, 3]  (unit vector of F_ij; 0 on diag)
@@ -76,7 +76,7 @@ def compute_physics_labels(
         net = force_ij.sum(axis=1)
         # U = sum_{i<j} q_i q_j / r  (soft cutoff in denominator)
         u = 0.5 * jnp.sum(mask * qp / dist)
-        return dist, qp, mag, direction, force_ij, net, u
+        return jnp.sqrt(dist_sq), qp, mag, direction, force_ij, net, u
 
     dist, qp, mag, direction, force_ij, net, u = jax.vmap(one)(pos_j, charges_j)
     return {

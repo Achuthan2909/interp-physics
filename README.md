@@ -68,5 +68,6 @@ uv run python -c "from interp_physics.models import AVAILABLE_MODELS, build_mode
 
 - Simulator is ported from DS 595 Assignment 2 (JAX semi-implicit Euler, soft distance cutoff).
 - Dataset includes analytic labels for probing at initial positions.
+- Train (38,400 systems) and val (4,000 systems) are separate simulations with different seeds. Probes are fit on the first 2,400 train systems.
 - Models return `ModelOutput`; set `return_activations=True` for probing hooks.
 - `equivariant_transformer` is a lightweight equivariant-attention stand-in, not full Equiformer irreps.

@@ -22,7 +22,6 @@ class HNNConfig:
     n_layers_potential: int = 2
     n_integrate: int = 10
     dt: float = 0.1  # n_integrate * dt ≈ dataset total time (1.0)
-    soft_cutoff_sq: float = 0.25
     return_activations: bool = False
 
 
@@ -31,7 +30,6 @@ class PairPotential(nn.Module):
 
     d_hidden: int = 64
     n_layers: int = 2
-    soft_cutoff_sq: float = 0.25
 
     @nn.compact
     def __call__(
@@ -49,7 +47,10 @@ class PairPotential(nn.Module):
         if ablate_embed is not None:
             h = project_out(h, ablate_embed)
         dist_sq = jnp.sum((pos[:, :, None, :] - pos[:, None, :, :]) ** 2, axis=-1, keepdims=True)
-        dist = jnp.sqrt(jnp.maximum(dist_sq, self.soft_cutoff_sq))
+        # Raw distance, not the simulator's clipped one: a clipped input gives
+        # zero force between close pairs. The epsilon keeps the gradient finite
+        # on the diagonal.
+        dist = jnp.sqrt(dist_sq + 1e-6)
 
         pair = (
             nn.Dense(self.d_hidden)(h)[:, :, None, :]
@@ -58,7 +59,9 @@ class PairPotential(nn.Module):
         )
         layers: list[jnp.ndarray] = []
         for layer_i in range(self.n_layers):
-            pair = nn.relu(nn.Dense(self.d_hidden)(pair))
+            # Smooth activation: the force is the gradient of this network, and
+            # ReLU would make it piecewise constant.
+            pair = nn.softplus(nn.Dense(self.d_hidden)(pair))
             if ablate_basis is not None and ablate_layer == layer_i:
                 pair = project_out(pair, ablate_basis)
             if capture:
@@ -94,7 +97,6 @@ class HNN(nn.Module):
         potential = PairPotential(
             d_hidden=cfg.d_hidden,
             n_layers=cfg.n_layers_potential,
-            soft_cutoff_sq=cfg.soft_cutoff_sq,
         )
         pair_basis = ablate_basis if ablate_site == "message" else None
         pair_layer = ablate_layer if ablate_site == "message" else None

@@ -75,7 +75,8 @@ class MessagePassingGNN(nn.Module):
                 )
                 msg = msg + nn.Dense(cfg.d_msg)(abs_ij)
 
-            m_ij = nn.relu(msg) * edges[:, :, :, None]
+            # Two-layer edge function, as in the EGNN paper.
+            m_ij = nn.relu(nn.Dense(cfg.d_msg)(nn.relu(msg))) * edges[:, :, :, None]
             if ablate_basis is not None and ablate_site == "message" and ablate_layer == layer_i:
                 m_ij = project_out(m_ij, ablate_basis)
 
@@ -85,7 +86,11 @@ class MessagePassingGNN(nn.Module):
                 attn = jax.nn.softmax(logits, axis=-1)
                 m_ij = m_ij * attn[:, :, :, None]
 
-            x_weight = nn.Dense(1)(m_ij)
+            # A small initial readout keeps tanh out of saturation at the start of
+            # training. With the default init every weight starts at +-1.
+            x_weight = nn.Dense(1, kernel_init=nn.initializers.normal(1e-3))(
+                nn.relu(nn.Dense(cfg.d_msg)(m_ij))
+            )
             if cfg.use_tanh:
                 x_weight = jnp.tanh(x_weight)
             edge_vec = rel * x_weight * edges[:, :, :, None]

@@ -122,7 +122,7 @@
 
   \node[font=\scriptsize, anchor=north] (F1) at ($(H.west)!0.5!(S.east)+(0,-5.25)$) {\mbox{$#4$}};
   \node[font=\scriptsize, anchor=north] at ($(F1.south)+(0,0.02)$)
-    {\mbox{$v \leftarrow v+\sum_j\tanh(w^{\top}m_{ij})\,(x_i-x_j)$
+    {\mbox{$v \leftarrow v+\sum_j\tanh(w^{\top}\mathrm{ReLU}(W_x m_{ij}))\,(x_i-x_j)$
      \qquad
      $h \leftarrow h+\mathrm{ReLU}(W[h,\sum_j m_{ij}])$}};
 
@@ -155,7 +155,7 @@
   \node[cell,p3] (e31) at (5.75,-0.68) {$e_{31}$};
   \node[group, fit=(e12)(e31)] (E) {};
   \node[lbl, below=1pt of E]
-    {pair scalars\\[-1pt]\textup{ReLU width #1, $\times$ #2}\\[-1pt]\textup{from $h_i$, $h_j$, distance}};
+    {pair scalars\\[-1pt]\textup{softplus width #1, $\times$ #2}\\[-1pt]\textup{from $h_i$, $h_j$, distance}};
   \draw[arr] (H.east) -- node[badge,pos=0.5]{2} (E.west);
   \node[font=\scriptsize, above=1pt] at ($(H.east)!0.5!(E.west)$) {pair};
 
@@ -228,7 +228,7 @@
   \draw[arr] (V.east) -- node[badge,pos=0.5]{6} (O.west);
 
   \node[font=\scriptsize, anchor=north] (F1) at ($(H.west)!0.5!(S.east)+(0,-5.25)$)
-    {\mbox{$c_{ij}=Wh_i+Uh_j+V\|x_i-x_j\|^2$
+    {\mbox{$c_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)$
      \qquad
      $h \leftarrow h+\mathrm{ReLU}(W[h,\sum_j\bar\alpha_{ij}c_{ij}])$}};
   \node[font=\scriptsize, anchor=north] at ($(F1.south)+(0,0.02)$)
@@ -254,17 +254,17 @@
 
 \begin{frame}{EGNN \textmd{\small 4 layers, hidden 64, message 32}}
 \centering
-\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{}}
+\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(W_2\,\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2))}{}}
 \end{frame}
 
 \begin{frame}{Attention EGNN \textmd{\small 4 layers, hidden 64, message 32}}
 \centering
-\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{softmax\\over $j$}}
+\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(W_2\,\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2))}{softmax\\over $j$}}
 \end{frame}
 
 \begin{frame}{Non-equivariant GNN \textmd{\small 4 layers, hidden 64, message 32}}
 \centering
-\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2+A[x_i,x_j])}{}}
+\fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(W_2\,\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2+A[x_i,x_j]))}{}}
 \end{frame}
 
 \begin{frame}{Hamiltonian network \textmd{\small potential width 64, 2 layers, 10 steps}}

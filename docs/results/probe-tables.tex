@@ -110,8 +110,8 @@ Widths below are the full models that produced the later tables: hidden width 64
   \node[io] (in) {Charge one-hot, position $x$, velocity $v$};
   \node[stage, below=6mm of in] (emb) {Embed the charge\\$h \leftarrow$ linear map of the one-hot, width 64};
   \node[stage, below=6mm of emb] (dist) {From positions, form the relative vector and the squared distance};
-  \node[stage, below=6mm of dist] (msg) {Message $m_{ij} = \mathrm{ReLU}(W h_i + U h_j + V\|x_i-x_j\|^2)$\\zero the message when the edge is 0};
-  \node[stage, below=6mm of msg] (vel) {Scalar $\tanh(w^\top m_{ij})$ times the relative vector\\is added into the velocity};
+  \node[stage, below=6mm of dist] (msg) {Message $m_{ij} = \mathrm{ReLU}(W_2\,\mathrm{ReLU}(W h_i + U h_j + V\|x_i-x_j\|^2))$\\zero the message when the edge is 0};
+  \node[stage, below=6mm of msg] (vel) {Scalar $\tanh(w^\top \mathrm{ReLU}(W_x m_{ij}))$ times the relative vector\\is added into the velocity};
   \node[stage, below=6mm of vel] (hup) {Sum the messages onto the receiver\\and add a residual update to $h$};
   \node[io, below=6mm of hup] (out) {Repeat the block 4 times\\guess $= x + v$};
   \draw[arr] (in) -- (emb);
@@ -169,8 +169,8 @@ Because the message can see where the particles sit in the coordinate frame, a r
 \centering
 \begin{tikzpicture}
   \node[io] (in) {Charges and positions};
-  \node[stage, below=6mm of in] (pair) {Pair features from $h_i$, $h_j$, and distance};
-  \node[stage, below=6mm of pair] (mlp) {Two ReLU layers of width 64 on each pair\\then a scalar $e_{ij}$};
+  \node[stage, below=6mm of in] (pair) {Pair features from $h_i$, $h_j$, and the raw distance};
+  \node[stage, below=6mm of pair] (mlp) {Two softplus layers of width 64 on each pair\\then a scalar $e_{ij}$};
   \node[stage, below=6mm of mlp] (pot) {Potential $V = \tfrac12 \sum_{ij} e_{ij}$\\energy $H = \tfrac12 \|v\|^2 + V$};
   \node[stage, below=6mm of pot] (int) {Integrate Hamilton's equations\\10 steps, step size $0.1$};
   \node[io, below=6mm of int] (out) {Guess $= $ the position after those 10 steps};
@@ -182,7 +182,7 @@ Because the message can see where the particles sit in the coordinate frame, a r
 \end{tikzpicture}
 \caption{Hamiltonian network.
 The learned object is a scalar potential, not a direct position guess.
-Block~1 and block~2 in its probe table are the two ReLU layers of this potential, evaluated at the initial positions.
+Block~1 and block~2 in its probe table are the two softplus layers of this potential, evaluated at the initial positions.
 The net-force cosine compares $-\partial H/\partial x$ at the start with the true net Coulomb force.}
 \label{fig:hnn}
 \end{figure}
@@ -192,7 +192,7 @@ The net-force cosine compares $-\partial H/\partial x$ at the start with the tru
 \begin{tikzpicture}
   \node[io] (in) {Charge one-hot, position $x$, velocity $v$};
   \node[stage, below=6mm of in] (emb) {Embed the charge, width 64};
-  \node[stage, below=6mm of emb] (content) {Pair content from $h_i$, $h_j$, and squared distance};
+  \node[stage, below=6mm of emb] (content) {Pair content: ReLU of a linear map of $h_i$, $h_j$, and squared distance};
   \node[stage, below=6mm of content] (attn) {4-head attention over the other particle\\masked by the edge table};
   \node[stage, below=6mm of attn] (vel) {Attention weight times a $\tanh$ scalar\\times the relative vector, added into velocity};
   \node[stage, below=6mm of vel] (hup) {Residual update of $h$ from the attended content};

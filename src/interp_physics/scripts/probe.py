@@ -29,6 +29,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--config", type=Path, default=None, help="Used when the checkpoint has no config.json")
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--l2", type=float, default=1.0)
+    p.add_argument("--n-probe-train", type=int, default=2400, help="Train systems the probes are fit on")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", type=Path, default=None)
     args = p.parse_args(argv)
@@ -55,13 +56,15 @@ def main(argv: list[str] | None = None) -> None:
     params = load_params(args.checkpoint, init)
 
     print(
-        f"Probing {model_name} | train={train_data['pos'].shape[0]} "
+        f"Probing {model_name} | train={min(args.n_probe_train, train_data['pos'].shape[0])} "
         f"val={val_data['pos'].shape[0]} N={train_data['pos'].shape[1]}"
     )
+    # Probes are fit on a subset of the train systems; the full set does not fit in memory.
+    probe_train = {k: (v[:args.n_probe_train] if hasattr(v, "shape") else v) for k, v in train_data.items()}
     results = run_probe_suite(
         model,
         params,
-        train_data,
+        probe_train,
         val_data,
         batch_size=args.batch_size,
         l2=args.l2,

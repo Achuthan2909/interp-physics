@@ -23,6 +23,9 @@ CONFIGS = {
 }
 
 
+N_PROBE_TRAIN = 2400
+
+
 def _index(rows: list[dict]) -> dict[tuple[str, str], dict]:
     return {(row["target"], row["layer"]): row for row in rows}
 
@@ -73,6 +76,8 @@ def main() -> None:
     data_dir = Path("artifacts/data")
     train_data = load_dataset(data_dir / "train.npz")
     val_data = load_dataset(data_dir / "val.npz")
+    # Probes are fit on a subset of the train systems; the full set does not fit in memory.
+    probe_train = {k: (v[:N_PROBE_TRAIN] if hasattr(v, "shape") else v) for k, v in train_data.items()}
     summary: dict = {"models": {}}
 
     for name, config_path in CONFIGS.items():
@@ -87,8 +92,8 @@ def main() -> None:
             train_data["edges"][:1],
         )
         print(f"Probing {name}")
-        trained = run_probe_suite(model, params, train_data, val_data)
-        fresh = run_probe_suite(model, init, train_data, val_data)
+        trained = run_probe_suite(model, params, probe_train, val_data)
+        fresh = run_probe_suite(model, init, probe_train, val_data)
         fresh_idx = _index(fresh)
         for row in trained:
             match = fresh_idx.get((row["target"], row["layer"]))
@@ -98,7 +103,7 @@ def main() -> None:
                 row["cosine_init"] = match.get("cosine")
         print(format_probe_table(trained))
         print(f"Ablating {name} readouts with R² >= 0.8")
-        ablations = ablate_good_probes(model, params, train_data, val_data, trained)
+        ablations = ablate_good_probes(model, params, probe_train, val_data, trained)
         for row in ablations:
             print(
                 f"  {row['target']:<18} {row['layer']:<10} "

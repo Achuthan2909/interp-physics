@@ -64,7 +64,8 @@ class EquivariantTransformer(nn.Module):
             dist_sq = jnp.sum(rel**2, axis=-1, keepdims=True)
 
             # Invariant content for attention: node feats + distance
-            content = (
+            # ReLU so the content can depend on the two charges jointly.
+            content = nn.relu(
                 nn.Dense(cfg.d_hidden)(h)[:, :, None, :]
                 + nn.Dense(cfg.d_hidden)(h)[:, None, :, :]
                 + nn.Dense(cfg.d_hidden)(dist_sq)
@@ -85,7 +86,8 @@ class EquivariantTransformer(nn.Module):
             # Equivariant coordinate update: attention-weighted relative vectors
             # mean over heads → scalar weight per edge
             w = attn.mean(axis=-1, keepdims=True)  # [B,N,N,1]
-            w = jnp.tanh(nn.Dense(1)(content)) * w
+            # Small initial readout keeps tanh out of saturation at the start.
+            w = jnp.tanh(nn.Dense(1, kernel_init=nn.initializers.normal(1e-3))(content)) * w
             edge_vec = rel * w * edges[:, :, :, None]
             v = v + edge_vec.sum(axis=2)
 

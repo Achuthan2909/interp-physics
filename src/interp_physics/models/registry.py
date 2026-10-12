@@ -64,7 +64,6 @@ def build_model(name: str, **kwargs: Any) -> nn.Module:
                 n_layers_potential=int(kwargs.get("n_layers_potential", 2)),
                 n_integrate=int(kwargs.get("n_integrate", 10)),
                 dt=float(kwargs.get("dt", 0.1)),
-                soft_cutoff_sq=float(kwargs.get("soft_cutoff_sq", 0.25)),
                 return_activations=_flag("return_activations"),
             )
         )
