@@ -6,7 +6,6 @@
 \usepackage{adjustbox}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usepgfplotslibrary{groupplots}
 \usetikzlibrary{positioning,arrows.meta,fit,calc}
 
 \setbeamertemplate{navigation symbols}{}
@@ -25,7 +24,6 @@
 \definecolor{s1}{HTML}{2A78D6}
 \definecolor{s2}{HTML}{EB6834}
 \definecolor{s3}{HTML}{1BAF7A}
-\definecolor{s4}{HTML}{EDA100}
 \definecolor{s5}{HTML}{E87BA4}
 \definecolor{s6}{HTML}{008300}
 
@@ -133,32 +131,6 @@
       -- ($(M.north)+(0,0.55)$) -- (M.north);
     \node[font=\scriptsize] at ($(M.north)!0.5!(S.north)+(0,0.78)$) {$\times$ #3 layers};
   \fi
-\end{tikzpicture}%
-}
-
-\newcommand{\MlpBlock}[2]{%
-\begin{tikzpicture}[x=1cm,y=1cm]
-  \node[cell,p1, minimum width=2.4cm] (r1) at (0,0.75) {charge, $x$, $v$ of 1};
-  \node[cell,p2, minimum width=2.4cm] (r2) at (0,0) {charge, $x$, $v$ of 2};
-  \node[cell,p3, minimum width=2.4cm] (r3) at (0,-0.75) {charge, $x$, $v$ of 3};
-  \node[group, fit=(r1)(r3)] (In) {};
-  \node[lbl, below=1pt of In] {3 of 10 particles\\[-1pt]\textup{edges unused}};
-
-  \node[group, font=\scriptsize, align=center, minimum width=1.8cm, minimum height=1.5cm]
-    (F) at (3.85,0) {one vector\\80};
-  \draw[arr] (In.east) -- node[badge,pos=0.5]{1} (F.west);
-  \node[font=\scriptsize, above=1pt] at ($(In.east)!0.5!(F.west)$) {flatten};
-
-  \node[group, font=\scriptsize, align=center, minimum width=2.5cm, minimum height=1.7cm]
-    (H) at (7.0,0) {ReLU layer\\width #1\\$\times$ #2};
-  \draw[arr] (F.east) -- node[badge,pos=0.5]{2} (H.west);
-
-  \node[group, font=\scriptsize, align=center, minimum width=2.2cm, minimum height=1.5cm]
-    (D) at (10.3,0) {linear map\\30 numbers\\$10\times 3$};
-  \draw[arr] (H.east) -- node[badge,pos=0.5]{3} (D.west);
-
-  \node[group, font=\scriptsize, align=center] (O) at (13.3,0) {predicted\\position\\$x+\Delta x$};
-  \draw[arr] (D.east) -- node[badge,pos=0.5]{4} (O.west);
 \end{tikzpicture}%
 }
 
@@ -280,118 +252,71 @@
 
 \begin{document}
 
-\begin{frame}{EGNN, big \textmd{\small 4 layers, hidden 64, message 32}}
+\begin{frame}{EGNN \textmd{\small 4 layers, hidden 64, message 32}}
 \centering
 \fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{}}
 \end{frame}
 
-\begin{frame}{EGNN, small \textmd{\small 1 layer, hidden 8, message 4}}
-\centering
-\fitdiagram{\GnnBlock{8}{4}{1}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{}}
-\end{frame}
-
-\begin{frame}{Attention EGNN, big \textmd{\small 4 layers, hidden 64, message 32}}
+\begin{frame}{Attention EGNN \textmd{\small 4 layers, hidden 64, message 32}}
 \centering
 \fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{softmax\\over $j$}}
 \end{frame}
 
-\begin{frame}{Attention EGNN, small \textmd{\small 1 layer, hidden 8, message 4}}
-\centering
-\fitdiagram{\GnnBlock{8}{4}{1}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2)}{softmax\\over $j$}}
-\end{frame}
-
-\begin{frame}{Non-equivariant GNN, big \textmd{\small 4 layers, hidden 64, message 32}}
+\begin{frame}{Non-equivariant GNN \textmd{\small 4 layers, hidden 64, message 32}}
 \centering
 \fitdiagram{\GnnBlock{64}{32}{4}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2+A[x_i,x_j])}{}}
 \end{frame}
 
-\begin{frame}{Non-equivariant GNN, small \textmd{\small 1 layer, hidden 8, message 4}}
-\centering
-\fitdiagram{\GnnBlock{8}{4}{1}{m_{ij}=\mathrm{ReLU}(Wh_i+Uh_j+V\|x_i-x_j\|^2+A[x_i,x_j])}{}}
-\end{frame}
-
-\begin{frame}{MLP, big \textmd{\small 4 layers, hidden 256}}
-\centering
-\fitdiagram{\MlpBlock{256}{4}}
-\end{frame}
-
-\begin{frame}{MLP, small \textmd{\small 1 layer, hidden 16}}
-\centering
-\fitdiagram{\MlpBlock{16}{1}}
-\end{frame}
-
-\begin{frame}{Hamiltonian network, big \textmd{\small potential width 64, 2 layers, 10 steps}}
+\begin{frame}{Hamiltonian network \textmd{\small potential width 64, 2 layers, 10 steps}}
 \centering
 \fitdiagram{\HnnBlock{64}{2}}
 \end{frame}
 
-\begin{frame}{Hamiltonian network, small \textmd{\small potential width 8, 1 layer, 10 steps}}
-\centering
-\fitdiagram{\HnnBlock{8}{1}}
-\end{frame}
-
-\begin{frame}{Equivariant transformer, big \textmd{\small 4 layers, hidden 64, 4 heads}}
+\begin{frame}{Equivariant transformer \textmd{\small 4 layers, hidden 64, 4 heads}}
 \centering
 \fitdiagram{\EqtBlock{64}{4}{4}}
 \end{frame}
 
-\begin{frame}{Equivariant transformer, small \textmd{\small 1 layer, hidden 8, 2 heads}}
-\centering
-\fitdiagram{\EqtBlock{8}{2}{1}}
-\end{frame}
-
-\begin{frame}{Position error \textmd{\small validation MSE over training, big and small networks}}
+\begin{frame}{Position error \textmd{\small validation MSE over training}}
 \centering
 \begin{tikzpicture}
-\begin{groupplot}[
-  group style={group size=2 by 1, horizontal sep=7mm, yticklabels at=edge left},
-  width=0.50\textwidth,
+\begin{axis}[
+  width=0.62\textwidth,
   height=0.66\textheight,
   xlabel={Epoch},
+  ylabel={Validation MSE},
   ymode=log,
-  ymin=0.008, ymax=100,
+  ymin=0.008, ymax=1,
   xmin=1, xmax=100,
   xtick={1,20,40,60,80,100},
-  ytick={0.01,0.1,1,10,100},
+  ytick={0.01,0.1,1},
   ymajorgrids, grid style={black!10},
   axis line style={black!45},
   tick style={black!45},
   tick label style={font=\scriptsize},
   label style={font=\small},
-  title style={font=\small\bfseries, yshift=-1.5mm},
   every axis plot/.append style={line width=1.1pt, line join=round},
   legend cell align={left},
-]
-\nextgroupplot[title={Big\strut}, ylabel={Validation MSE},
   legend to name=mselegend,
   legend columns=3,
   legend style={font=\scriptsize, draw=none, fill=none, text=black,
                 /tikz/every even column/.append style={column sep=3mm}}]
-\addplot[s1, line width=1.1pt] table[x=epoch,y=egnn_big,col sep=comma] {val_mse.csv};
-\addlegendentry{EGNN\enspace{\color{black!55}0.090 / 0.129}}
-\addplot[s2, line width=1.1pt] table[x=epoch,y=attn_big,col sep=comma] {val_mse.csv};
-\addlegendentry{Attention EGNN\enspace{\color{black!55}0.014 / 0.125}}
-\addplot[s3, line width=1.1pt] table[x=epoch,y=noneq_big,col sep=comma] {val_mse.csv};
-\addlegendentry{Non-equivariant GNN\enspace{\color{black!55}0.079 / 0.131}}
-\addplot[s4, line width=1.1pt] table[x=epoch,y=mlp_big,col sep=comma] {val_mse.csv};
-\addlegendentry{MLP\enspace{\color{black!55}0.222 / 0.140}}
-\addplot[s5, line width=1.1pt] table[x=epoch,y=hnn_big,col sep=comma] {val_mse.csv};
-\addlegendentry{Hamiltonian\enspace{\color{black!55}0.126 / 0.125}}
-\addplot[s6, line width=1.1pt] table[x=epoch,y=eqt_big,col sep=comma] {val_mse.csv};
-\addlegendentry{Equivariant transformer\enspace{\color{black!55}0.051 / 0.085}}
-\nextgroupplot[title={Small\strut}]
-\addplot[s1, line width=1.1pt] table[x=epoch,y=egnn_small,col sep=comma] {val_mse.csv};
-\addplot[s2, line width=1.1pt] table[x=epoch,y=attn_small,col sep=comma] {val_mse.csv};
-\addplot[s3, line width=1.1pt] table[x=epoch,y=noneq_small,col sep=comma] {val_mse.csv};
-\addplot[s4, line width=1.1pt] table[x=epoch,y=mlp_small,col sep=comma] {val_mse.csv};
-\addplot[s5, line width=1.1pt] table[x=epoch,y=hnn_small,col sep=comma] {val_mse.csv};
-\addplot[s6, line width=1.1pt] table[x=epoch,y=eqt_small,col sep=comma] {val_mse.csv};
-\end{groupplot}
+\addplot[s1, line width=1.1pt] table[x=epoch,y=egnn,col sep=comma] {val_mse.csv};
+\addlegendentry{EGNN\enspace{\color{black!55}0.090}}
+\addplot[s2, line width=1.1pt] table[x=epoch,y=attn,col sep=comma] {val_mse.csv};
+\addlegendentry{Attention EGNN\enspace{\color{black!55}0.014}}
+\addplot[s3, line width=1.1pt] table[x=epoch,y=noneq,col sep=comma] {val_mse.csv};
+\addlegendentry{Non-equivariant GNN\enspace{\color{black!55}0.079}}
+\addplot[s5, line width=1.1pt] table[x=epoch,y=hnn,col sep=comma] {val_mse.csv};
+\addlegendentry{Hamiltonian\enspace{\color{black!55}0.126}}
+\addplot[s6, line width=1.1pt] table[x=epoch,y=eqt,col sep=comma] {val_mse.csv};
+\addlegendentry{Equivariant transformer\enspace{\color{black!55}0.051}}
+\end{axis}
 \end{tikzpicture}
 
 \vspace{0.5mm}
 \pgfplotslegendfromname{mselegend}
-\tablenote{Numbers beside each name: validation MSE at epoch 100, big / small.}
+\tablenote{Number beside each name: validation MSE at epoch 100.}
 \end{frame}
 
 \begin{frame}{Probe scores: EGNN}
@@ -437,22 +362,6 @@ Force direction & & 0.018 & $-0.004$ & 0.004 & $-0.004$ \\
 \bottomrule
 \end{tabular}
 \tablenote{Validation $R^2$ of a linear probe. Force direction is a mean cosine, not an $R^2$.}
-\end{frame}
-
-\begin{frame}{Probe scores: MLP}
-\centering\small
-\begin{tabular}{lrrrr}
-\toprule
-Fact & Block 1 & Block 2 & Block 3 & Block 4 \\
-\midrule
-Charge & 0.909 & 0.733 & 0.520 & 0.345 \\
-Distance & 0.191 & 0.106 & 0.038 & $-0.013$ \\
-Charge product & $-0.007$ & $-0.033$ & $-0.051$ & $-0.062$ \\
-Force magnitude & $-0.024$ & $-0.048$ & $-0.061$ & $-0.075$ \\
-Potential energy & $-0.026$ & $-0.013$ & $-0.065$ & $-0.178$ \\
-\bottomrule
-\end{tabular}
-\tablenote{Validation $R^2$ of a linear probe.}
 \end{frame}
 
 \begin{frame}{Probe scores: Hamiltonian network}
@@ -504,40 +413,7 @@ EGNN & Charge product, block 1 & 0.090 & 0.103 \\
 Hamiltonian network & Distance, block 1 & 0.126 & 0.136 \\
 Non-equivariant GNN & Potential energy, block 1 & 0.079 & 0.086 \\
 Attention EGNN & Charge, embed & 0.014 & 0.019 \\
-MLP & Charge, block 1 & 0.222 & 0.211 \\
 Hamiltonian network & Charge, embed & 0.126 & 0.120 \\
-\bottomrule
-\end{tabular}
-\tablenote{Validation MSE before and after the probe direction is removed.}
-\end{frame}
-
-\begin{frame}{Small networks}
-\centering\small
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lrrrrrrr}
-\toprule
-Network & Error & Charge & Distance & $q_i q_j$ & $\|F\|$ & Potential & Force \\
-\midrule
-EGNN & 0.129 & 1.000 & 0.222 & 0.000 & 0.026 & $-0.002$ & $-0.225$ \\
-Attention EGNN & 0.125 & 1.000 & $-1.230$ & 0.276 & 0.245 & $-4.651$ & 0.387 \\
-Non-equivariant GNN & 0.131 & 1.000 & 0.011 & 0.002 & 0.008 & $-0.009$ & 0.002 \\
-Equivariant transformer & 0.085 & 1.000 & 0.937 & 0.000 & 0.264 & 0.000 & 0.788 \\
-Hamiltonian network & 0.125 & 1.000 & 0.907 & 0.990 & 0.478 & 0.754 & 0.214 \\
-MLP & 0.140 & 0.038 & 0.001 & $-0.003$ & $-0.007$ & $-0.005$ & \\
-\bottomrule
-\end{tabular}
-\tablenote{Error is validation MSE at epoch 100. Force is a mean cosine. The other columns are probe $R^2$.}
-\end{frame}
-
-\begin{frame}{Small-network deletions}
-\centering\small
-\begin{tabular}{llrr}
-\toprule
-Network & Removed & Before & After \\
-\midrule
-Equivariant transformer & Charge, embed & 0.085 & 0.298 \\
-Equivariant transformer & Distance, block 1 & 0.085 & 0.245 \\
-Attention EGNN & Charge, embed & 0.125 & 0.137 \\
 \bottomrule
 \end{tabular}
 \tablenote{Validation MSE before and after the probe direction is removed.}

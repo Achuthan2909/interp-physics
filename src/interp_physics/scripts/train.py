@@ -25,16 +25,12 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--config", type=Path, default=Path("configs/egnn_baseline.yaml"))
     p.add_argument("--data", type=Path, default=Path("artifacts/data"))
     p.add_argument("--out", type=Path, default=None)
-    p.add_argument("--smoke", action="store_true", help="2-epoch sanity train")
     args = p.parse_args(argv)
 
     cfg = _load_yaml(args.config)
     model_name = cfg.get("model", "egnn")
     model_kw = cfg.get("model_kwargs", {})
     train_kw = cfg.get("train", {})
-
-    if args.smoke:
-        train_kw = {**train_kw, "n_epochs": 2, "batch_size": 8, "log_every": 1}
 
     train_data = load_dataset(args.data / "train.npz")
     val_data = load_dataset(args.data / "val.npz")

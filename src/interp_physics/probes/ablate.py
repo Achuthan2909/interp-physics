@@ -39,18 +39,6 @@ def _basis_for(
         y = np.asarray(data["charges"]).reshape(-1)
         return "node", layer, readout_basis(x, y, l2=l2)
 
-    if site == "system":
-        layer = int(layer_name.split("_")[1]) - 1
-        x = sites["activations"][layer][:, 0, :]
-        if target == "charge":
-            y = np.asarray(data["charges"])
-        elif target == "potential_energy":
-            y = np.asarray(data["potential_energy"])
-        else:
-            ii, jj = np.triu_indices(data["pos"].shape[1], k=1)
-            y = np.asarray(data[target])[:, ii, jj]
-        return "node", layer, readout_basis(x, y, l2=l2)
-
     if site in {"message", "mean_message"}:
         block = int(layer_name.split("_")[1]) - 1
         messages = sites["messages"][block]

@@ -18,33 +18,27 @@ Always run through `uv` (project `.venv`), not global Python.
 ```
 src/interp_physics/
   data/         Coulomb simulator + analytic probe labels
-  models/       EGNN baseline (+ registry for HNN / Equiformer later)
+  models/       five architectures + registry
   train/        shared train / checkpoint helpers
-  probes/       Phase 1 stubs
+  probes/       linear probes + ablation of probed directions
   causal/       Phase 2 stubs
   geometry/     Phase 3 CKA stubs
   analysis/     plots
-  scripts/      CLI: make-data, train
+  scripts/      CLI: make-data, train, probe
 configs/        YAML run configs
 artifacts/      datasets + checkpoints (gitignored)
 docs/           proposal + thesis
 ```
 
-## Quickstart (smoke)
-
-```bash
-# 1. Tiny dataset
-uv run interp-make-data --smoke --out artifacts/data_smoke
-
-# 2. Short train
-uv run interp-train --config configs/egnn_smoke.yaml --data artifacts/data_smoke --smoke
-```
-
-## Full Assignment-2-scale data
+## Quickstart
 
 ```bash
 uv run interp-make-data --out artifacts/data
 uv run interp-train --config configs/egnn_baseline.yaml --data artifacts/data
+uv run interp-probe --checkpoint artifacts/runs/egnn_baseline
+
+# Train (if needed), probe and ablate all five architectures
+uv run python -m interp_physics.scripts.probe_all
 ```
 
 ## Architecture suite
@@ -56,7 +50,6 @@ uv run interp-train --config configs/egnn_baseline.yaml --data artifacts/data
 | `equivariant_transformer` | `configs/equivariant_transformer.yaml` | Equivariant multi-head attention (lite) |
 | `hnn` | `configs/hnn.yaml` | Physics-explicit Hamiltonian |
 | `non_eq_gnn` | `configs/non_eq_gnn.yaml` | Graph net without rotation equivariance |
-| `mlp` | `configs/mlp.yaml` | Unconstrained MLP |
 
 ```bash
 uv run python -c "from interp_physics.models import AVAILABLE_MODELS, build_model; print(AVAILABLE_MODELS)"
@@ -65,9 +58,9 @@ uv run python -c "from interp_physics.models import AVAILABLE_MODELS, build_mode
 ## Build order (proposal phases)
 
 1. Data + EGNN baseline  
-2. **Architecture registry** ← you are here  
+2. Architecture registry  
 3. Activation hooks + linear probes  
-4. Causal ablation / activation patching  
+4. Causal ablation (done) / **activation patching** ← you are here  
 5. CKA across models  
 6. Grokking / data-size sweeps  
 

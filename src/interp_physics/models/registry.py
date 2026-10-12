@@ -10,14 +10,12 @@ from interp_physics.models.attention_egnn import AttentionEGNN, AttentionEGNNCon
 from interp_physics.models.egnn import EGNN, EGNNConfig
 from interp_physics.models.eq_transformer import EquivariantTransformer, EquivariantTransformerConfig
 from interp_physics.models.hnn import HNN, HNNConfig
-from interp_physics.models.mlp import MLPDynamics, MLPConfig
 from interp_physics.models.non_eq_gnn import NonEquivariantGNN, NonEqGNNConfig
 
 AVAILABLE_MODELS = (
     "egnn",
     "attention_egnn",
     "non_eq_gnn",
-    "mlp",
     "hnn",
     "equivariant_transformer",
 )
@@ -54,15 +52,6 @@ def build_model(name: str, **kwargs: Any) -> nn.Module:
             config=NonEqGNNConfig(
                 d_hidden=int(kwargs.get("d_hidden", 64)),
                 d_msg=int(kwargs.get("d_msg", 32)),
-                n_layers=int(kwargs.get("n_layers", 4)),
-                return_activations=_flag("return_activations"),
-            )
-        )
-
-    if name in {"mlp", "mlp_dynamics"}:
-        return MLPDynamics(
-            config=MLPConfig(
-                d_hidden=int(kwargs.get("d_hidden", 256)),
                 n_layers=int(kwargs.get("n_layers", 4)),
                 return_activations=_flag("return_activations"),
             )

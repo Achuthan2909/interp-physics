@@ -97,17 +97,8 @@ def run_probe_suite(
     results: list[dict[str, Any]] = []
 
     n_act = int(train["activations"].shape[0])
-    has_messages = train["messages"] is not None
-    if not has_messages:
-        return _probe_global_state(train, val, train_data, val_data, n_act, l2=l2, seed=seed)
-
     for layer in range(n_act):
-        if has_messages and layer == 0:
-            site_name = "embed"
-        elif has_messages:
-            site_name = f"block_{layer}"
-        else:
-            site_name = f"block_{layer + 1}"
+        site_name = "embed" if layer == 0 else f"block_{layer}"
         scored = _score_split(
             train["activations"][layer],
             train_data["charges"],
@@ -124,9 +115,6 @@ def run_probe_suite(
                 **scored,
             }
         )
-
-    if train["messages"] is None:
-        return results
 
     n_blocks = int(train["messages"].shape[0])
     for block in range(n_blocks):
@@ -209,59 +197,6 @@ def run_probe_suite(
             }
         )
 
-    return results
-
-
-def _probe_global_state(
-    train: dict[str, Any],
-    val: dict[str, Any],
-    train_data: dict[str, Any],
-    val_data: dict[str, Any],
-    n_act: int,
-    *,
-    l2: float,
-    seed: int,
-) -> list[dict[str, Any]]:
-    """Probe a model whose hidden state is one vector per system (the MLP)."""
-    results: list[dict[str, Any]] = []
-    n_particles = int(train_data["pos"].shape[1])
-    ii, jj = _pair_index(n_particles)
-    for layer in range(n_act):
-        layer_name = f"block_{layer + 1}"
-        x_train = train["activations"][layer][:, 0, :]
-        x_val = val["activations"][layer][:, 0, :]
-        scored = _score_split(
-            x_train,
-            train_data["charges"],
-            x_val,
-            val_data["charges"],
-            l2=l2,
-            seed=seed + layer,
-        )
-        results.append({"target": "charge", "site": "system", "layer": layer_name, **scored})
-        for target_name, label_key in PAIR_TARGETS:
-            scored = _score_split(
-                x_train,
-                train_data[label_key][:, ii, jj],
-                x_val,
-                val_data[label_key][:, ii, jj],
-                l2=l2,
-                seed=seed + 100 + layer,
-            )
-            results.append(
-                {"target": target_name, "site": "system", "layer": layer_name, **scored}
-            )
-        scored = _score_split(
-            x_train,
-            train_data["potential_energy"],
-            x_val,
-            val_data["potential_energy"],
-            l2=l2,
-            seed=seed + 200 + layer,
-        )
-        results.append(
-            {"target": "potential_energy", "site": "system", "layer": layer_name, **scored}
-        )
     return results
 
 

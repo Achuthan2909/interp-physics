@@ -22,27 +22,16 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--dt", type=float, default=0.001)
     p.add_argument("--n-train", type=int, default=2400)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--smoke", action="store_true", help="Tiny dataset for a quick check")
     args = p.parse_args(argv)
 
-    if args.smoke:
-        cfg = CoulombConfig(
-            n_samples=32,
-            n_particles=5,
-            n_steps=50,
-            dt=0.001,
-            seed=args.seed,
-        )
-        n_train = 16
-    else:
-        cfg = CoulombConfig(
-            n_samples=args.n_samples,
-            n_particles=args.n_particles,
-            n_steps=args.n_steps,
-            dt=args.dt,
-            seed=args.seed,
-        )
-        n_train = args.n_train
+    cfg = CoulombConfig(
+        n_samples=args.n_samples,
+        n_particles=args.n_particles,
+        n_steps=args.n_steps,
+        dt=args.dt,
+        seed=args.seed,
+    )
+    n_train = args.n_train
 
     print(f"Generating Coulomb dataset: {cfg}")
     data = generate_charged_particles(cfg)

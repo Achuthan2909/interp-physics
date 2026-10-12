@@ -18,7 +18,6 @@ CONFIGS = {
     "egnn": "configs/egnn_baseline.yaml",
     "attention_egnn": "configs/attention_egnn.yaml",
     "non_eq_gnn": "configs/non_eq_gnn.yaml",
-    "mlp": "configs/mlp.yaml",
     "hnn": "configs/hnn.yaml",
     "equivariant_transformer": "configs/equivariant_transformer.yaml",
 }

@@ -24,7 +24,7 @@
   \midrule
 }
 
-\title{What the probes read\\in the six Coulomb networks}
+\title{What the probes read\\in the five Coulomb networks}
 \author{Achuthan Rathinam}
 \date{8 October 2026}
 
@@ -91,7 +91,7 @@ Lower is better.
 The graph layers calculate squared distance themselves by subtracting the two positions.
 They do not receive a distance matrix, a force matrix, or the potential energy.
 
-\section{The six architectures}
+\section{The five architectures}
 
 The three message-passing networks share one block.
 The drawings that follow mark the single change that makes each variant.
@@ -168,25 +168,6 @@ Because the message can see where the particles sit in the coordinate frame, a r
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}
-  \node[io] (in) {Flatten charges, positions, and velocities\\$10\times 2 + 10\times 3 + 10\times 3 = 80$ numbers\\the edge table is ignored};
-  \node[stage, below=6mm of in] (h1) {Linear map to 256, then ReLU};
-  \node[stage, below=6mm of h1] (h2) {Repeat that dense layer four times\\one vector for the whole system};
-  \node[stage, below=6mm of h2] (outv) {Linear map to 30 numbers\\reshape to a $10\times 3$ displacement};
-  \node[io, below=6mm of outv] (out) {Guess $= \text{initial position} + \text{displacement}$};
-  \draw[arr] (in) -- (h1);
-  \draw[arr] (h1) -- (h2);
-  \draw[arr] (h2) -- (outv);
-  \draw[arr] (outv) -- (out);
-\end{tikzpicture}
-\caption{MLP.
-There is no pair message.
-The probe reads the single 256-dimensional vector and asks whether that one vector can recover every pair's fact at once.}
-\label{fig:mlp}
-\end{figure}
-
-\begin{figure}[ht]
-\centering
-\begin{tikzpicture}
   \node[io] (in) {Charges and positions};
   \node[stage, below=6mm of in] (pair) {Pair features from $h_i$, $h_j$, and distance};
   \node[stage, below=6mm of pair] (mlp) {Two ReLU layers of width 64 on each pair\\then a scalar $e_{ij}$};
@@ -240,8 +221,7 @@ The logged epochs are 1, 20, 40, 60, 80, and 100.
 \centering
 \caption{Validation position error.
 Attention EGNN is the most accurate.
-The Hamiltonian network's error rises after epoch~1.
-The MLP's training error at epoch~100 is $0.004$, while the validation error stays near $0.22$.}
+The Hamiltonian network's error rises after epoch~1.}
 \label{tab:mse}
 \begin{tabular}{lrrrrrr}
 \toprule
@@ -252,7 +232,6 @@ Equivariant transformer & 0.242 & 0.128 & 0.087 & 0.091 & 0.086 & 0.051 \\
 Non-equivariant GNN & 0.741 & 0.101 & 0.083 & 0.081 & 0.080 & 0.079 \\
 EGNN & 0.127 & 0.093 & 0.092 & 0.090 & 0.090 & 0.090 \\
 Hamiltonian network & 0.083 & 0.101 & 0.113 & 0.121 & 0.117 & 0.126 \\
-MLP & 0.138 & 0.210 & 0.231 & 0.229 & 0.224 & 0.222 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -372,27 +351,6 @@ Net force & & & 0.085 \\
 \end{tabular}
 \end{table}
 
-\begin{table}[ht]
-\centering
-\caption{MLP.
-There is no pair message and no charge embedding before the first dense layer.
-Charge is readable in block~1 and fades.
-Distance, charge product, force magnitude, and potential energy stay near $0$ or below.
-A negative entry means the line is worse than guessing the average.}
-\label{tab:mlp}
-\begin{tabular}{lrrrr}
-\toprule
-Fact & Block 1 & Block 2 & Block 3 & Block 4 \\
-\midrule
-Charge & 0.909 & 0.733 & 0.520 & 0.345 \\
-Distance & 0.191 & 0.106 & 0.038 & $-0.013$ \\
-Charge product & $-0.007$ & $-0.033$ & $-0.051$ & $-0.062$ \\
-Force magnitude & $-0.024$ & $-0.048$ & $-0.061$ & $-0.075$ \\
-Potential energy & $-0.026$ & $-0.013$ & $-0.065$ & $-0.178$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \section{Deleting a high-scoring line}
 
 A line was removed only when its validation $R^2$ was at least $0.8$.
@@ -423,13 +381,12 @@ Attention EGNN & Charge, block 2 & 0.014 & 0.028 \\
 EGNN & Charge product, block 1 & 0.090 & 0.103 \\
 Hamiltonian network & Distance, block 1 & 0.126 & 0.137 \\
 Attention EGNN & Charge, embedding & 0.014 & 0.019 \\
-MLP & Charge, block 1 & 0.222 & 0.212 \\
 Hamiltonian network & Charge, embedding & 0.126 & 0.120 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The last two rows move the wrong way by a small amount: the error goes down.
+The last row moves the wrong way by a small amount: the error goes down.
 That is still a change, but it is not evidence that the network needed the deleted line.
 The EGNN's perfect charge and distance scores are not in this table.
 Deleting those lines left the position error at $0.090$.
@@ -438,7 +395,7 @@ Deleting those lines left the position error at $0.090$.
 
 The assignment trained the same Coulomb task and reported validation error in the notebook discussion.
 Three of those runs correspond to networks here.
-The MLP, the Hamiltonian network, and the equivariant transformer were not in the assignment.
+The Hamiltonian network and the equivariant transformer were not in the assignment.
 
 \begin{table}[ht]
 \centering
@@ -455,50 +412,6 @@ No residual & --- & 0.0896 & --- \\
 No velocity & --- & 0.0983 & --- \\
 No distance & --- & 0.1279 & --- \\
 No tanh & --- & 11.46 & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{The same test on a much smaller copy}
-
-Each network was cut to one block and about eight times narrower, then trained and probed again.
-The EGNN in this copy has hidden width 8, message width 4, and 213 parameters.
-The full EGNN has four blocks of width 64.
-The position guesses get worse, except the small transformer, which stays near its full-size error.
-Its force-arrow cosine is $0.79$, the first time that arrow lines up, and deleting distance or the charge embedding makes the guess clearly worse.
-
-\begin{table}[ht]
-\centering
-\caption{Small networks, one block.
-Position error is the validation mean squared error at epoch~100.
-The other columns are probe $R^2$, except the force arrow, which is a cosine.
-The Hamiltonian net's arrow column is the net-force cosine.}
-\label{tab:tiny}
-\begin{tabular}{lrrrrrrr}
-\toprule
-Network & Error & Charge & Distance & $q_i q_j$ & $\|F\|$ & Potential & Arrow \\
-\midrule
-EGNN & 0.129 & 1.00 & 0.22 & 0.00 & 0.03 & 0.00 & $-0.23$ \\
-Attention EGNN & 0.125 & 1.00 & $-1.23$ & 0.28 & 0.25 & $-4.65$ & 0.39 \\
-Non-equivariant GNN & 0.131 & 1.00 & 0.01 & 0.00 & 0.01 & $-0.01$ & 0.00 \\
-Transformer & 0.085 & 1.00 & 0.94 & 0.00 & 0.26 & 0.00 & 0.79 \\
-Hamiltonian net & 0.125 & 1.00 & 0.91 & 0.99 & 0.48 & 0.75 & 0.21 \\
-MLP & 0.140 & 0.04 & 0.00 & 0.00 & $-0.01$ & $-0.01$ & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{Deletions on the small transformer, the only small network whose position error stays near the full model.
-Both deletions make the guess worse.}
-\label{tab:tiny-ablate}
-\begin{tabular}{lrr}
-\toprule
-Line removed & Before & After \\
-\midrule
-Charge, embedding & 0.085 & 0.298 \\
-Distance, block 1 & 0.085 & 0.245 \\
 \bottomrule
 \end{tabular}
 \end{table}
