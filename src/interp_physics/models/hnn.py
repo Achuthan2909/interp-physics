@@ -13,6 +13,7 @@ import jax
 import jax.numpy as jnp
 
 from interp_physics.models.base import ModelOutput
+from interp_physics.models.project import project_out
 
 
 @dataclass(frozen=True)
@@ -38,8 +39,15 @@ class PairPotential(nn.Module):
         pos: jnp.ndarray,
         node_feat: jnp.ndarray,
         edges: jnp.ndarray,
-    ) -> tuple[jnp.ndarray, jnp.ndarray]:
+        *,
+        capture: bool = False,
+        ablate_layer: int | None = None,
+        ablate_basis: jnp.ndarray | None = None,
+        ablate_embed: jnp.ndarray | None = None,
+    ) -> tuple[jnp.ndarray, jnp.ndarray] | tuple[jnp.ndarray, jnp.ndarray, list[jnp.ndarray]]:
         h = nn.Dense(self.d_hidden)(node_feat)
+        if ablate_embed is not None:
+            h = project_out(h, ablate_embed)
         dist_sq = jnp.sum((pos[:, :, None, :] - pos[:, None, :, :]) ** 2, axis=-1, keepdims=True)
         dist = jnp.sqrt(jnp.maximum(dist_sq, self.soft_cutoff_sq))
 
@@ -48,11 +56,18 @@ class PairPotential(nn.Module):
             + nn.Dense(self.d_hidden)(h)[:, None, :, :]
             + nn.Dense(self.d_hidden)(dist)
         )
-        for _ in range(self.n_layers):
+        layers: list[jnp.ndarray] = []
+        for layer_i in range(self.n_layers):
             pair = nn.relu(nn.Dense(self.d_hidden)(pair))
+            if ablate_basis is not None and ablate_layer == layer_i:
+                pair = project_out(pair, ablate_basis)
+            if capture:
+                layers.append(pair)
 
         e_ij = nn.Dense(1)(pair).squeeze(-1) * edges
         v = 0.5 * e_ij.sum(axis=(-1, -2))
+        if capture:
+            return v, h, layers
         return v, h
 
 
@@ -70,6 +85,9 @@ class HNN(nn.Module):
         edges: jnp.ndarray,
         *,
         return_activations: bool | None = None,
+        ablate_site: str | None = None,
+        ablate_layer: int | None = None,
+        ablate_basis: jnp.ndarray | None = None,
     ) -> ModelOutput:
         cfg = self.config
         want = cfg.return_activations if return_activations is None else return_activations
@@ -78,31 +96,46 @@ class HNN(nn.Module):
             n_layers=cfg.n_layers_potential,
             soft_cutoff_sq=cfg.soft_cutoff_sq,
         )
+        pair_basis = ablate_basis if ablate_site == "message" else None
+        pair_layer = ablate_layer if ablate_site == "message" else None
+        embed_basis = ablate_basis if ablate_site == "node" else None
 
         def hamiltonian(q, p):
             kinetic = 0.5 * jnp.sum(p**2, axis=(-1, -2))
-            v, embed = potential(q, node_feat, edges)
-            return kinetic + v, embed
+            v, _embed = potential(
+                q,
+                node_feat,
+                edges,
+                ablate_layer=pair_layer,
+                ablate_basis=pair_basis,
+                ablate_embed=embed_basis,
+            )
+            return kinetic + v
 
         q, p = pos, vel
-        acts: list[jnp.ndarray] = []
 
         def energy_sum(q_, p_):
-            h, _ = hamiltonian(q_, p_)
-            return h.sum()
+            return hamiltonian(q_, p_).sum()
 
         for _ in range(cfg.n_integrate):
             dH_dq = jax.grad(energy_sum, argnums=0)(q, p)
             p = p - cfg.dt * dH_dq
             dH_dp = jax.grad(energy_sum, argnums=1)(q, p)
             q = q + cfg.dt * dH_dp
-            if want:
-                _, embed = hamiltonian(q, p)
-                acts.append(embed)
 
+        acts = None
+        msgs = None
         extras = None
         if want:
-            h_val, _ = hamiltonian(q, p)
-            extras = {"hamiltonian": h_val}
+            _v, embed, layers = potential(pos, node_feat, edges, capture=True)
+            acts = [embed]
+            msgs = layers
+            model_force = -jax.grad(energy_sum, argnums=0)(pos, vel)
+            extras = {"model_force": model_force}
 
-        return ModelOutput(pred_pos=q, activations=acts if want else None, extras=extras)
+        return ModelOutput(
+            pred_pos=q,
+            activations=acts,
+            messages=msgs,
+            extras=extras,
+        )

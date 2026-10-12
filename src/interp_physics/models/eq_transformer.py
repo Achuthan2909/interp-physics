@@ -14,6 +14,7 @@ import jax
 import jax.numpy as jnp
 
 from interp_physics.models.base import ModelOutput
+from interp_physics.models.project import project_out
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,9 @@ class EquivariantTransformer(nn.Module):
         edges: jnp.ndarray,
         *,
         return_activations: bool | None = None,
+        ablate_site: str | None = None,
+        ablate_layer: int | None = None,
+        ablate_basis: jnp.ndarray | None = None,
     ) -> ModelOutput:
         cfg = self.config
         want = cfg.return_activations if return_activations is None else return_activations
@@ -48,8 +52,14 @@ class EquivariantTransformer(nn.Module):
         x = pos
         v = vel
         acts: list[jnp.ndarray] = []
+        msgs: list[jnp.ndarray] = []
+        edge_updates: list[jnp.ndarray] = []
+        if ablate_basis is not None and ablate_site == "node" and ablate_layer == 0:
+            h = project_out(h, ablate_basis)
+        if want:
+            acts.append(h)
 
-        for _ in range(cfg.n_layers):
+        for layer_i in range(cfg.n_layers):
             rel = x[:, :, None, :] - x[:, None, :, :]
             dist_sq = jnp.sum(rel**2, axis=-1, keepdims=True)
 
@@ -59,6 +69,8 @@ class EquivariantTransformer(nn.Module):
                 + nn.Dense(cfg.d_hidden)(h)[:, None, :, :]
                 + nn.Dense(cfg.d_hidden)(dist_sq)
             )
+            if ablate_basis is not None and ablate_site == "message" and ablate_layer == layer_i:
+                content = project_out(content, ablate_basis)
 
             q = nn.Dense(cfg.d_hidden)(content)
             k = nn.Dense(cfg.d_hidden)(content)
@@ -74,12 +86,22 @@ class EquivariantTransformer(nn.Module):
             # mean over heads → scalar weight per edge
             w = attn.mean(axis=-1, keepdims=True)  # [B,N,N,1]
             w = jnp.tanh(nn.Dense(1)(content)) * w
-            v = v + (rel * w * edges[:, :, :, None]).sum(axis=2)
+            edge_vec = rel * w * edges[:, :, :, None]
+            v = v + edge_vec.sum(axis=2)
 
             # Feature update from attended content
             agg = (content * attn.mean(axis=-1, keepdims=True) * edges[:, :, :, None]).sum(axis=2)
             h = h + nn.relu(nn.Dense(cfg.d_hidden)(jnp.concatenate([h, agg], axis=-1)))
+            if ablate_basis is not None and ablate_site == "node" and ablate_layer == layer_i + 1:
+                h = project_out(h, ablate_basis)
             if want:
                 acts.append(h)
+                msgs.append(content)
+                edge_updates.append(edge_vec)
 
-        return ModelOutput(pred_pos=x + v, activations=acts if want else None)
+        return ModelOutput(
+            pred_pos=x + v,
+            activations=acts if want else None,
+            messages=msgs if want else None,
+            edge_updates=edge_updates if want else None,
+        )

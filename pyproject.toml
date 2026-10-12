@@ -20,6 +20,7 @@ dependencies = [
 [project.scripts]
 interp-make-data = "interp_physics.scripts.make_data:main"
 interp-train = "interp_physics.scripts.train:main"
+interp-probe = "interp_physics.scripts.probe:main"
 
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]

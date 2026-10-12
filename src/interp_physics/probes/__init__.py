@@ -1,3 +1,5 @@
-"""Linear probing stubs — Phase 1 of the proposal."""
+"""Linear probes from frozen activations onto analytic physics labels."""
 
-# TODO: fit sklearn / flax linear probes on layer activations vs physics labels.
+from interp_physics.probes.suite import format_probe_table, run_probe_suite
+
+__all__ = ["format_probe_table", "run_probe_suite"]
