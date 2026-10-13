@@ -1,290 +1,115 @@
-% =====================================================================
-%  M.S. THESIS  --  Achuthan Rathinam  --  Boston University, CDS
-%
-%  What Does a Physics Network Actually Learn?
-%  Mechanistic Interpretability Across a Spectrum of
-%  Physics-Informed Neural Architectures
-%
-%  Build:   latexmk -pdf thesis.tex          (from docs/thesis/)
-%  Clean:   latexmk -c
-%  NOTE: the table of contents and cross-references need 2-3 passes;
-%  latexmk handles that automatically.  A single pdflatex run leaves
-%  the ToC empty and shows "?" for every \ref.
-%
-%  Formatting follows the BU "Guide for Writers of Theses and
-%  Dissertations" (rev. 2026-08-26) and the July 2026 General Thesis
-%  Template.  Each rule is tagged [BU x.y.z] where it is implemented.
-%
-%  This file is currently an OUTLINE: each chapter has a one- or
-%  two-line note on what it will cover plus its section headings.
-%  \note{...} prints in colour while \draftnotestrue is set below; flip
-%  to \draftnotesfalse for the submission build and the notes vanish.
-%
-% ---------------------------------------------------------------------
-%  DECISIONS TO LOCK BEFORE WRITING
-%  * RQ5 (grokking) is exploratory; Ch. 8 is sized to shrink if thin.
-%  * Official school name: the guide's list of official school names
-%    (p. 27) does NOT include CDS; the contacts page says "Faculty of
-%    Computing & Data Sciences".  Confirm with Dan Yang (CDS Graduate
-%    Affairs, danybu@bu.edu).
-%  * Readers' official titles.  No "Dr." before names [BU p. 29].
-%  * Bibliography style: numbered by order of appearance (unsrtnat, as
-%    in the proposal) or alphabetical.  Never mix.  [BU 1.8.1]
-%  * Graduation year: set to 2026.  Must be the year of official
-%    conferral, not submission -- change to 2027 if conferral is in
-%    January.  [BU 1.2.3]
-% =====================================================================
+%% =====================================================================
+%%  M.S. THESIS  --  Achuthan Rathinam  --  Boston University, CDS
+%%
+%%  What Does a Physics Network Actually Learn?
+%%  Mechanistic Interpretability Across a Spectrum of
+%%  Physics-Informed Neural Architectures
+%%
+%%  Built on the BU CDS Masters Thesis Template (buthesis.cls):
+%%  https://github.com/BU-CDS/cds-masters-thesis-template
+%%
+%%  Build:   latexmk -pdf thesis.tex          (from docs/thesis/)
+%%  Clean:   latexmk -c
+%%
+%%  Class options:
+%%     notes    (default) show the \note{...} / \todo{...} draft notes
+%%     nonotes  hide them all -- use for the final PDF
+%%
+%%  This file is currently an OUTLINE: each chapter has a one- or
+%%  two-line note on what it will cover plus its section headings.
+%%
+%% ---------------------------------------------------------------------
+%%  DECISIONS TO LOCK BEFORE WRITING
+%%  * RQ5 (grokking) is exploratory; Ch. 8 is sized to shrink if thin.
+%%  * Degree name: "Master of Science" here; the template's default is
+%%    "Masters of Data Science".  Confirm with Dan Yang (CDS Graduate
+%%    Affairs, danybu@bu.edu).
+%%  * Readers' official titles.  No "Dr." before names.
+%%  * Bibliography style: numbered by order of appearance (unsrtnat, as
+%%    in the proposal) or alphabetical (plainnat).  Never mix.
+%%  * Graduation year: set to 2026.  Must be the year of official
+%%    conferral, not submission -- change to 2027 if conferral is in
+%%    January.
+%% =====================================================================
+\PassOptionsToPackage{numbers,sort&compress}{natbib}   % numbered citations
+\documentclass[notes]{buthesis}
 
-\documentclass[12pt,oneside,openany]{report}   % [BU 1.1.2] 12-pt text
-
-% ---------- page geometry -------------------------------------------
-% [BU 1.1.3] top 1.5" to first line, left 1.5", right 1", bottom >= 1".
-% [BU 1.1.5] page number 0.75" from the bottom, centred.
-%   bottom = 1.1in and footskip = 0.35in puts the number baseline at
-%   1.1 - 0.35 = 0.75in from the paper edge while keeping >= 1" of
-%   clear bottom margin for the text block.
-\usepackage[letterpaper,
-            top=1.5in, left=1.5in, right=1in, bottom=1.1in,
-            footskip=0.35in, nohead]{geometry}
-
-% ---------- fonts ----------------------------------------------------
-% [BU 1.1.2] Times-family Type 1 fonts; all embedded by pdflatex.
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{newtxtext,newtxmath}   % newtxmath already provides the AMS symbols; do not load amssymb
-\usepackage{microtype}
-\emergencystretch=2em            % never run into the 1" right margin
-
-% ---------- spacing --------------------------------------------------
-\usepackage{setspace}
-\doublespacing                   % [BU 1.1.1] double-space everything
-\usepackage[font=singlespacing,labelfont=bf,labelsep=period]{caption}
-                                 % [BU 1.1.1] captions may be single-spaced
-
-% ---------- headings -------------------------------------------------
-% Template style: "CHAPTER ONE" then the title, both bold, centred,
-% 12 pt.  [BU 1.1.2] headings may be caps/bold but not larger than 12 pt.
-\usepackage{titlesec}
-\usepackage{fmtcount}            % \NUMBERstring{chapter} -> ONE, TWO, ...
-\titleformat{\chapter}[display]
-  {\normalfont\normalsize\bfseries\centering}
-  {CHAPTER \NUMBERstring{chapter}}{0pt}{\MakeUppercase}
-\titleformat{name=\chapter,numberless}[block]
-  {\normalfont\normalsize\bfseries\centering}{}{0pt}{\MakeUppercase}
-\titlespacing*{\chapter}{0pt}{0pt}{\baselineskip}   % heading sits at the 1.5" line
-\titlespacing*{name=\chapter,numberless}{0pt}{0pt}{\baselineskip}
-\titleformat{\section}{\normalfont\normalsize\bfseries}{\thesection}{1em}{}
-\titleformat{\subsection}{\normalfont\normalsize\bfseries\itshape}{\thesubsection}{1em}{}
-\titleformat{\subsubsection}{\normalfont\normalsize\itshape}{\thesubsubsection}{1em}{}
-\titlespacing*{\section}{0pt}{0.5\baselineskip}{0pt}
-\titlespacing*{\subsection}{0pt}{0.5\baselineskip}{0pt}
-\titlespacing*{\subsubsection}{0pt}{0.5\baselineskip}{0pt}
-
-% ---------- lists of contents / tables / figures ---------------------
-\usepackage[titles]{tocloft}     % titles left to titlesec (uppercase, centred)
-\renewcommand{\contentsname}{Table of Contents}
-\renewcommand{\listtablename}{List of Tables}
-\renewcommand{\listfigurename}{List of Figures}
-\renewcommand{\bibname}{Bibliography}
-\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}   % dotted leaders on chapters
-\renewcommand{\cftchapfont}{\normalfont}
-\renewcommand{\cftchappagefont}{\normalfont}
-\setcounter{tocdepth}{2}         % [BU 1.6] committees usually want subsections listed
-\setlength{\cftbeforechapskip}{0pt}
-
-% ---------- page numbers --------------------------------------------
-\usepackage{fancyhdr}
-\fancypagestyle{plain}{%
-  \fancyhf{}
-  \fancyfoot[C]{\thepage}        % [BU 1.1.5] bottom centre (one of the four allowed)
-  \renewcommand{\headrulewidth}{0pt}
-  \renewcommand{\footrulewidth}{0pt}}
-\pagestyle{plain}
-
-% ---------- maths, tables, colour, citations -------------------------
 \usepackage{amsmath}
-\usepackage{booktabs,array}
-\usepackage{graphicx}
+\usepackage{booktabs}
 \usepackage{xcolor}
-\usepackage[numbers,sort&compress]{natbib}   % numbered, order of appearance [BU 1.8.1]
-\setlength{\bibsep}{\baselineskip}           % [BU 1.8.1] blank line between entries
-\usepackage[hidelinks]{hyperref}             % load last
+\setcitestyle{square}
+\emergencystretch=1in   % let long contents entries wrap instead of running into the right margin
 
-% ---------- draft-note macros ---------------------------------------
-\newif\ifdraftnotes
-\draftnotestrue                  % <- set \draftnotesfalse for the submission build
-\newcommand{\note}[1]{\ifdraftnotes{\color{blue!55!black}\sffamily [#1]}\fi}
-\newcommand{\todo}[1]{\ifdraftnotes{\color{red!70!black}\sffamily\bfseries [TODO: #1]}\fi}
+% ---------- draft-note macros (hidden by the nonotes class option) ----
+\newcommand{\note}[1]{\templatenote{{\color{blue!55!black}\sffamily [#1]}}}
+\newcommand{\todo}[1]{\templatenote{{\color{red!70!black}\sffamily\bfseries [TODO: #1]}}}
 
-% ---------- metadata -------------------------------------------------
-\newcommand{\thesistitle}{What Does a Physics Network Actually Learn?
-  Mechanistic Interpretability Across a Spectrum of Physics-Informed
-  Neural Architectures}
-\newcommand{\thesisauthor}{Achuthan Rathinam}
-\newcommand{\thesisschool}{Faculty of Computing \& Data Sciences}  % TODO confirm official wording
-\newcommand{\thesisdegree}{Master of Science}                       % [BU 1.2.3] degree only, no discipline
-\newcommand{\thesisyear}{2026}                                      % [BU 1.2.3] year of conferral, no month (2027 if conferral is January)
-\newcommand{\firstreader}{Siddharth Mishra-Sharma, Ph.D.}
-\newcommand{\firstreadertitle}{Assistant Professor of Computing \& Data Sciences}   % TODO confirm official title
-\newcommand{\secondreader}{Naomi Saphra, Ph.D.}
-\newcommand{\secondreadertitle}{Assistant Professor of Computing \& Data Sciences}
+% ---------------------------------------------------------------------
+%  Your information
+% ---------------------------------------------------------------------
+\school{FACULTY OF COMPUTING AND DATA SCIENCE}
+\doctype{Thesis}
+% Title page: all capitals, bold, centered. Break lines with \\
+\title{WHAT DOES A PHYSICS NETWORK ACTUALLY LEARN?\\
+       MECHANISTIC INTERPRETABILITY ACROSS A\\
+       SPECTRUM OF PHYSICS-INFORMED NEURAL\\
+       ARCHITECTURES}
+% The class spaces the title page for a two-line title; this one needs
+% four, so take the extra lines out of the gap above "Submitted in...".
+\makeatletter
+\patchcmd{\maketitlepage}{\vspace{8\wordline}}{\vspace{4\wordline}}{}{\PatchFailed}
+\makeatother
+% Abstract page title (may be broken differently)
+\abstracttitle{WHAT DOES A PHYSICS NETWORK ACTUALLY LEARN?\\
+               MECHANISTIC INTERPRETABILITY ACROSS A\\
+               SPECTRUM OF PHYSICS-INFORMED NEURAL\\
+               ARCHITECTURES}
+\author{ACHUTHAN RATHINAM}                            % title page
+\authorfull{ACHUTHAN RATHINAM}                        % copyright page
+\priordegrees{B.S., \todo{Institution}, \todo{Year}}  % use \\ for several
+\degree{Master of Science}
+\degreeyear{2026}
 
 \begin{document}
 
-% =====================================================================
-%  PRELIMINARY PAGES   [BU 1.1.6]  roman numerals, bottom centre;
-%  pages i-iii are counted but carry no number.
-% =====================================================================
-\pagenumbering{roman}
+% ------------------------- Preliminary pages -------------------------
+\prelims                                  % roman numerals, footer
+\maketitlepage                            % i   (no number shown)
+\makecopyrightpage                        % ii  (no number shown)
+\input{frontmatter/approval}              % iii (no number shown)
+\input{frontmatter/acknowledgments}       % optional
+\input{frontmatter/abstract}              % required
+\tableofcontents                          % required
+\input{frontmatter/lists}                 % tables / figures
+\input{frontmatter/abbreviations}         % optional
 
-% ---------- i. Title page (counted, unnumbered) -----------------------
-\thispagestyle{empty}
-\begin{center}
-  BOSTON UNIVERSITY\\[\baselineskip]
-  \MakeUppercase{\thesisschool}\\[2\baselineskip]
-  Thesis\\[2\baselineskip]
-  \textbf{\MakeUppercase{\thesistitle}}\\[2\baselineskip]
-  by\\[\baselineskip]
-  \textbf{\MakeUppercase{\thesisauthor}}\\[0.5\baselineskip]
-  B.S., \todo{Institution}, \todo{Year}\\[3\baselineskip]
-  Submitted in partial fulfillment of the\\
-  requirements for the degree of\\
-  \thesisdegree\\[\baselineskip]
-  \thesisyear
-\end{center}
-\clearpage
+% ---------------------------- Main text ------------------------------
+\mainbody                                 % arabic numerals, header
+\input{chapters/01-introduction}
+\input{chapters/02-background}
+\input{chapters/03-testbed}
+\input{chapters/04-architectures}
+\input{chapters/05-methods}
+\input{chapters/06-results-encoding}
+\input{chapters/07-results-causal}
+\input{chapters/08-results-geometry}
+\input{chapters/09-discussion}
+\input{chapters/10-conclusion}
 
-% ---------- ii. Copyright page (counted, unnumbered) ------------------
-\thispagestyle{empty}
-\vspace*{\fill}
-\begin{center}
-  \copyright\ \thesisyear\ by\\
-  \MakeUppercase{\thesisauthor}\\
-  All rights reserved
-\end{center}
-\vspace*{\fill}
-\clearpage
+% ---------------------------- Back matter ----------------------------
+\backmatter
+\input{backmatter/appendix-A-simulator}   % appendices BEFORE bibliography
+\input{backmatter/appendix-B-hyperparameters}
+\input{backmatter/appendix-C-probe-controls}
+\input{backmatter/appendix-D-cka}
+\input{backmatter/appendix-E-code}
 
-% ---------- iii. Readers' approval page (counted, unnumbered) --------
-% [BU 1.4] unsigned copy stays in the PDF; official titles; no "Dr.".
-\thispagestyle{empty}
-\noindent Approved by\\[3\baselineskip]
-\begin{singlespace}
-\noindent First Reader\hspace{1em}\rule{3.5in}{0.4pt}\\
-\hspace*{7.2em}\firstreader\\
-\hspace*{7.2em}\firstreadertitle\\[3\baselineskip]
-\noindent Second Reader\hspace{1em}\rule{3.5in}{0.4pt}\\
-\hspace*{7.2em}\secondreader\\
-\hspace*{7.2em}\secondreadertitle
-\end{singlespace}
-\clearpage
-
-% ---------- iv. Acknowledgments (optional; Dedication omitted) --------
-\chapter*{Acknowledgments}
-\addcontentsline{toc}{chapter}{ACKNOWLEDGMENTS}
-\note{Advisor, readers, collaborators, compute resources, funding.}
-\clearpage
-
-% ---------- v. Abstract (required)  [BU 1.5] --------------------------
-% Master's header: title, author, ABSTRACT.  No figures or tables.
-\phantomsection
-\addcontentsline{toc}{chapter}{ABSTRACT}
-\begin{center}
-  \textbf{\MakeUppercase{\thesistitle}}\\[\baselineskip]
-  \textbf{\MakeUppercase{\thesisauthor}}\\[\baselineskip]
-  \textbf{ABSTRACT}
-\end{center}
-\note{Write last. One paragraph each on the problem, the method, the
-results, and the conclusions [BU 1.5.1].}
-\clearpage
-
-% ---------- vi. Table of Contents (required) --------------------------
-\phantomsection
-\addcontentsline{toc}{chapter}{TABLE OF CONTENTS}
-\tableofcontents
-\clearpage
-
-% ---------- vii. List of Tables (required if any)  [BU 1.1.7] ---------
-\phantomsection
-\addcontentsline{toc}{chapter}{LIST OF TABLES}
-\listoftables
-\note{Fills in automatically once tables exist.}
-\clearpage
-
-% ---------- viii. List of Figures (required if any) -------------------
-\phantomsection
-\addcontentsline{toc}{chapter}{LIST OF FIGURES}
-\listoffigures
-\note{Fills in automatically once figures exist.}
-\clearpage
-
-% ---------- ix. List of Abbreviations (alphabetical)  [BU 1.1.7] ------
-\chapter*{List of Abbreviations}
-\addcontentsline{toc}{chapter}{LIST OF ABBREVIATIONS}
-\begin{singlespace}
-\noindent
-\begin{tabular}{@{}p{1.4in}p{4.2in}@{}}
-CKA     & Centered Kernel Alignment \\[0.5\baselineskip]
-EGNN    & E($n$) Equivariant Graph Neural Network \\[0.5\baselineskip]
-GNN     & Graph Neural Network \\[0.5\baselineskip]
-HNN     & Hamiltonian Neural Network \\[0.5\baselineskip]
-MLP     & Multilayer Perceptron \\[0.5\baselineskip]
-MSE     & Mean Squared Error \\[0.5\baselineskip]
-RQ      & Research Question \\[0.5\baselineskip]
-SO(3)   & Special Orthogonal Group in Three Dimensions (rotations) \\
-\end{tabular}
-\end{singlespace}
-\clearpage
-
-% =====================================================================
-%  MAIN TEXT   [BU 1.1.5]  arabic numerals starting at 1
-% =====================================================================
-\pagenumbering{arabic}
-
-\include{chapters/01-introduction}
-\include{chapters/02-background}
-\include{chapters/03-testbed}
-\include{chapters/04-architectures}
-\include{chapters/05-methods}
-\include{chapters/06-results-encoding}
-\include{chapters/07-results-causal}
-\include{chapters/08-results-geometry}
-\include{chapters/09-discussion}
-\include{chapters/10-conclusion}
-
-% =====================================================================
-%  APPENDICES   [BU 1.7]  precede the bibliography; pagination continues
-% =====================================================================
-\appendix
-\titleformat{\chapter}[display]
-  {\normalfont\normalsize\bfseries\centering}
-  {APPENDIX \thechapter}{0pt}{\MakeUppercase}
-
-\include{appendices/A-simulator}
-\include{appendices/B-hyperparameters}
-\include{appendices/C-probe-controls}
-\include{appendices/D-cka}
-\include{appendices/E-code}
-
-% =====================================================================
-%  BIBLIOGRAPHY   [BU 1.8]  single cumulative list
-% =====================================================================
-\clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{BIBLIOGRAPHY}
-\nocite{*}                    % outline stage: list every entry in references.bib; remove once chapters cite
-\begin{singlespace}           % [BU 1.8.1] may be single-spaced, one blank line between entries
+% Bibliography. unsrtnat = numbered, order of appearance;
+% plainnat = alphabetical by author.
+\nocite{*}                                % outline stage: remove once chapters cite
 \bibliographystyle{unsrtnat}
 \bibliography{references}
-\end{singlespace}
 
-% =====================================================================
-%  CURRICULUM VITAE   [BU 1.9]  required; last numbered page(s)
-% =====================================================================
-\clearpage
-\chapter*{Curriculum Vitae}
-\addcontentsline{toc}{chapter}{CURRICULUM VITAE}
-\note{Required. Full name, a contact address good for 1--2 years,
-education, positions, publications. Three to four pages at most.}
+\input{backmatter/cv}                     % required
 
 \end{document}

@@ -1,0 +1,98 @@
+# Formatting rules checked by buthesis-check.
+# Values mirror buthesis.cls and the Word "General Thesis Template".
+# Bump `version` whenever a rule changes, so students and the office can
+# tell which rules a report was produced with.
+
+version = "2026.09"
+
+[page]
+width_in = 8.5
+height_in = 11.0
+tolerance_pt = 1.0
+
+[margins]
+top_in = 1.5
+left_in = 1.5
+right_in = 1.0
+bottom_in = 1.0
+# Glyph bounding boxes and rules are not measured exactly; allow this much
+# intrusion into a margin before reporting it.
+tolerance_in = 0.05
+
+[page_numbers]
+# Pages i-iii (title, copyright, approval) carry no printed number.
+unnumbered_pages = 3
+# Numbers are centered over the text block; allowed offset from its center.
+center_tolerance_in = 0.1
+
+[fonts]
+body_size_pt = 12.0
+size_tolerance_pt = 0.3
+# Case-insensitive substrings of acceptable body font names (Times faces).
+body_font_patterns = [
+  "times",
+  "termes",
+  "nimbusrom",
+  "nimbusroman",
+  "stixtwotext",
+]
+
+[structure]
+# Headings are matched on centered lines, ignoring case and whitespace.
+# Each group must appear, in this order. Alternatives are listed together.
+required_in_order = [
+  ["ABSTRACT"],
+  ["TABLE OF CONTENTS"],
+  ["CHAPTER ONE"],
+  ["BIBLIOGRAPHY", "REFERENCES", "WORKS CITED"],
+  ["CURRICULUM VITAE", "VITA"],
+]
+title_page_text = "BOSTON UNIVERSITY"
+copyright_page_text = "All rights reserved"
+approval_page_text = "Approved by"
+# Appendices must come after the last chapter and before the bibliography.
+appendix_prefix = "APPENDIX"
+
+[placeholders]
+# Sample text from the template that must be replaced before submission.
+phrases = [
+  "202X",
+  "YOUR NAME IN ALL CAPITALS",
+  "YOUR FULL NAME",
+  "YOUR FULL SCHOOL/COLLEGE NAME",
+  "IN ALL CAPITAL LETTERS BOLD AND CENTERED",
+  "University of Jupiter",
+  "Name of First Reader",
+  "Name of Second Reader",
+  "Name of Third Reader",
+  "Professor of ...",
+  "This is where your epigraph goes",
+  "my patient spouse Landry",
+  "Here's where you thank the people who helped you",
+  "The body of the abstract begins here",
+  "It was a dark and stormy night; the rain fell in torrents",
+  "This is my glossary",
+  "The profound text of my thesis goes here",
+  "My First Table",
+  "My Other Table",
+  "Placeholder for the first figure",
+  "Placeholder for the first illustration",
+]
+
+[template_notes]
+# Instruction notes from the template. Build with \documentclass[nonotes]
+# (LaTeX) or delete them (Word) before submission.
+phrases = [
+  "Delete this page if",
+  "This is where your appendix goes",
+  "This is where your CV goes",
+  "This section is required of ALL students",
+  "Do not delete the section break",
+  "The unsigned approval page remains in the final thesis PDF",
+  "must be listed in alphabetical order",
+  "Do NOT put your references or bibliography ahead of any appendices",
+  "Citations may be in alphabetical order by the surname of the main author",
+  "then a List of Tables is required",
+  "then a List of Figures is required",
+  "then a List of Illustrations is required",
+]
